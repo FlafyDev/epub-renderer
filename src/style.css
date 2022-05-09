@@ -1,0 +1,21 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* @font-face {
+  font-family: "Literata";
+  src: url("./fonts/Literata-VariableFont_opsz,wght.ttf");
+} */
+
+body {
+  color: white;
+  background-color: black;
+}
+
+#contentContainer {
+  column-width: 100vw;
+  position: fixed;
+  inset: 0;
+}

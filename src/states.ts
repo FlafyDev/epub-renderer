@@ -7,8 +7,8 @@ class States {
     top: 50,
     bottom: 20,
   };
-  private _fontSizePercentage = 1;
-  private _lineHeightPercentage = 1;
+  private _fontSizePercentage = 1.125;
+  private _lineHeightPercentage = 1.2;
   private _align: "left" | "center" | "right" | "justify" = "left";
   private _fontFamily: string = "Literata";
 
@@ -67,6 +67,7 @@ class States {
 
   set fontSizePercentage(value: number) {
     this._fontSizePercentage = value;
+
     this.originalStyles.forEach((elem, orig) => {
       (elem as HTMLElement).style.fontSize = `${
         parseFloat(orig.fontSize) * this._fontSizePercentage
@@ -80,10 +81,11 @@ class States {
 
   set lineHeightPercentage(value: number) {
     this._lineHeightPercentage = value;
+
     this.originalStyles.forEach((elem, orig) => {
-      (elem as HTMLElement).style.lineHeight = `${
-        parseFloat(orig.lineHeight) * this._lineHeightPercentage
-      }px`;
+      (elem as HTMLElement).style.lineHeight = `calc(${
+        orig.lineHeight === "normal" ? "1.5em" : orig.lineHeight
+      } * ${this._lineHeightPercentage})`;
     });
   }
 }

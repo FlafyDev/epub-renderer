@@ -8,6 +8,7 @@ import {
 import { Dictionary } from "typescript-collections";
 import getSelector from "./utils/getSelector";
 import { States } from "./states";
+import clone from "just-clone";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 (globalThis as any).page = 0;
@@ -29,7 +30,7 @@ onPageHtml((newHtml) => {
   contentContainer.innerHTML = `${newHtml}`;
 
   contentContainer.querySelectorAll("*").forEach((elem) => {
-    originalStyles.setValue(elem, window.getComputedStyle(elem));
+    originalStyles.setValue(elem, clone(window.getComputedStyle(elem)));
   });
 
   states.innerPage = 0;
@@ -51,7 +52,7 @@ onPageHtml((newHtml) => {
 
 onMoveInnerPage((previous) => {
   const newInnerPage = states.innerPage - (+previous * 2 - 1);
-  console.log(newInnerPage);
+
   if (newInnerPage < 0) {
     requestPreviousPage();
   } else if (newInnerPage >= innerPages) {
@@ -63,9 +64,13 @@ onMoveInnerPage((previous) => {
 
 // Testing
 (globalThis as any).test = () => {
-  console.log((window as any).moveInnerPage);
   (window as any).moveInnerPage(false);
 };
+
+// setInterval(() => {
+//   states.fontSizePercentage += 0.1;
+//   console.log(states.fontSizePercentage);
+// }, 1000);
 
 const render = () => {
   (window as any).setPageHtml(

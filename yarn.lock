@@ -301,6 +301,11 @@ jsonc-parser@^3.0.0:
   resolved "https://registry.yarnpkg.com/jsonc-parser/-/jsonc-parser-3.0.0.tgz#abdd785701c7e7eaca8a9ec8cf070ca51a745a22"
   integrity sha512-fQzRfAbIBnR0IQvftw9FJveWiHp72Fg20giDrHz6TdfB12UH/uue0D3hm57UB5KgAVuniLMCaS8P1IMj9NR7cA==
 
+just-clone@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/just-clone/-/just-clone-5.0.1.tgz#e2978fe886046267cad1df7c6aabcf3aa2a1b6a9"
+  integrity sha512-y6hFQ8X4fhJTZzdNvrE9mnCQX33uN4xV0hZ+5WNgs6yCcrRzs9ieFXuYRKznWqQ/gOSZpJu0yQ6hRHLCU6ezyw==
+
 ms@2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"

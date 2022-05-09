@@ -18,4 +18,5 @@ body {
   column-width: 100vw;
   position: fixed;
   inset: 0;
+  word-spacing: 2px;
 }

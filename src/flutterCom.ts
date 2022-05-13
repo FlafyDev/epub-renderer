@@ -1,5 +1,4 @@
-const flutterCallback = (name: string, ...args: any) =>
-  (window as any).flutterCallback(name, ...args);
+const flutterCallback = (window as any).flutterCallback;
 
 // const onNextPage = () => {};
 

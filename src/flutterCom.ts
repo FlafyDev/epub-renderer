@@ -1,23 +1,73 @@
-const flutterCallback = (window as any).flutterCallback;
+// let currentPage = 0;
 
-// const onNextPage = () => {};
+// const methods: { [method: string]: (message: { message: string }) => void } = {
+//   getPages: ({ message }) => {
+//     const pages = message.split(",").map((elem) => parseInt(elem));
+//     for (let i = 0; i < pages.length; i++) {
+//       let content = "";
+//       for (let j = 0; j < 5000; j++) {
+//         content += `<div>Page ${pages[i]} -- ${j}</div>`;
+//       }
+//       (window as any).pageData(pages[i], content);
+//     }
+//   },
+//   loaded: (arg) => {
+//     (window as any).setLocation(currentPage, "");
+//   },
+//   nextPage: (arg) => {
+//     currentPage++;
+//     (window as any).setLocation(currentPage, "");
+//   },
+//   previousPage: (arg) => {
+//     currentPage--;
+//     (window as any).setLocation(currentPage, "end");
+//   },
+// };
 
-// const onPrevPage = () => {
+// Object.keys(methods).forEach((methodName) => {
+//   (window as any)[methodName] = {
+//     postMessage: (message: string) => methods[methodName]({ message: message }),
+//   };
+// });
 
-// }
-
-export const onPageHtml = (callback: (html: string) => void) => {
-  (window as any).setPageHtml = callback;
+const callChannel = (name: string, message?: string) => {
+  console.log(`${name}: "${message}"`);
+  return (window as any)[name].postMessage(message) as void;
 };
 
-export const onMoveInnerPage = (callback: (previous: boolean) => void) => {
+// From Flutter app
+export const onSetLocation = (
+  callback: (index: number, selector: string) => void
+) => {
+  (window as any).setLocation = callback;
+};
+
+export const onPageData = (callback: (index: number, html: string) => void) => {
+  (window as any).pageData = callback;
+};
+
+export const onMoveInnerPage = (callback: (offset: number) => void) => {
   (window as any).moveInnerPage = callback;
 };
 
+// To Flutter app
 export const requestNextPage = () => {
-  flutterCallback("nextPage");
+  callChannel("nextPage");
 };
 
 export const requestPreviousPage = () => {
-  flutterCallback("previousPage");
+  callChannel("previousPage");
+};
+
+export const requestPages = (pages: number[]) => {
+  callChannel("getPages", pages.join(","));
+};
+
+// export const notifyLoaded = () => {
+//   callChannel("loaded");
+// };
+
+// TODO use this
+export const updateLocation = (pageIndex: number, elementSelector: string) => {
+  callChannel("updateLocation", `${pageIndex},${elementSelector}`);
 };

@@ -1,5 +1,3 @@
-import { Dictionary } from "typescript-collections";
-
 class States {
   private _innerPage = 0;
   private _margin = {
@@ -14,7 +12,10 @@ class States {
 
   constructor(
     public contentContainer: HTMLElement,
-    public originalStyles: Dictionary<Element, CSSStyleDeclaration>
+    public pageElements: Map<
+      String,
+      { element: HTMLElement; originalStyles: CSSStyleDeclaration }
+    >
   ) {}
 
   get innerPage() {
@@ -68,9 +69,9 @@ class States {
   set fontSizePercentage(value: number) {
     this._fontSizePercentage = value;
 
-    this.originalStyles.forEach((elem, orig) => {
-      (elem as HTMLElement).style.fontSize = `${
-        parseFloat(orig.fontSize) * this._fontSizePercentage
+    this.pageElements.forEach((props) => {
+      props.element.style.fontSize = `${
+        parseFloat(props.originalStyles.fontSize) * this._fontSizePercentage
       }px`;
     });
   }
@@ -82,9 +83,11 @@ class States {
   set lineHeightPercentage(value: number) {
     this._lineHeightPercentage = value;
 
-    this.originalStyles.forEach((elem, orig) => {
-      (elem as HTMLElement).style.lineHeight = `calc(${
-        orig.lineHeight === "normal" ? "1.5em" : orig.lineHeight
+    this.pageElements.forEach((props) => {
+      props.element.style.lineHeight = `calc(${
+        props.originalStyles.lineHeight === "normal"
+          ? "1.5em"
+          : props.originalStyles.lineHeight
       } * ${this._lineHeightPercentage})`;
     });
   }

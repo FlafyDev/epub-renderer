@@ -1,11 +1,14 @@
 import "./style.css";
 import {
+  // notifyLoaded,
   onMoveInnerPage,
-  onPageHtml,
+  onPageData,
+  onSetLocation,
   requestNextPage,
+  requestPages,
   requestPreviousPage,
+  // updateLocation,
 } from "./flutterCom";
-import { Dictionary } from "typescript-collections";
 import getSelector from "./utils/getSelector";
 import { States } from "./states";
 import clone from "just-clone";
@@ -21,14 +24,17 @@ app.innerHTML = `
 // <button style="position: fixed; inset: 0; height: 50px;" onclick="globalThis.test();">Change page</button>
 
 const contentContainer = document.getElementById("contentContainer")!;
-const originalStyles = new Dictionary<Element, CSSStyleDeclaration>((key) =>
-  getSelector(key)
-);
+const pageElements = new Map<
+  string,
+  { element: HTMLElement; originalStyles: CSSStyleDeclaration }
+>();
 
-const states = new States(contentContainer, originalStyles);
+const states = new States(contentContainer, pageElements);
 let innerPages = 0;
-let firstVisibleElement: HTMLElement | null = null;
+let firstVisibleElement: HTMLElement | null | "end" = null;
 
+const cachedPages = new Map<number, string>();
+let pendingPageToRender: [number, string] | null;
 const calculateInnerPages = () => {
   // Equation: `entireWidth = columnWidth * innerPages + columnGap * (innerPages - 1) - (left + right) * innerPages`
   const entireWidth = contentContainer.scrollWidth;
@@ -42,11 +48,59 @@ const calculateInnerPages = () => {
 };
 
 // Events
-onPageHtml((newHtml) => {
-  contentContainer.innerHTML = `${newHtml}`;
+onPageData((index, html) => {
+  cachedPages.set(index, html);
+
+  console.log(`on data of ${index}`);
+
+  if (pendingPageToRender?.[0] === index) {
+    renderPage(pendingPageToRender[0], pendingPageToRender[1]);
+    pendingPageToRender = null;
+  }
+});
+
+onSetLocation((index, selector) => {
+  const pagesToRequest: number[] = [];
+
+  const cachedPageHTML = cachedPages.get(index);
+  if (cachedPageHTML) {
+    renderPage(index, selector);
+  } else {
+    pendingPageToRender = [index, selector];
+    pagesToRequest.push(index);
+  }
+
+  // if (!cachedPages.get(index - 1)) pagesToRequest.push(index - 1);
+  // if (!cachedPages.get(index + 1)) pagesToRequest.push(index + 1);
+
+  console.log(`Requesting pages: ${pagesToRequest}`);
+  if (pagesToRequest.length > 0) requestPages(pagesToRequest);
+});
+
+const renderPage = (index: number, selector = "") => {
+  renderHTML(cachedPages.get(index)!);
+
+  firstVisibleElement = selector
+    ? selector === "end"
+      ? "end"
+      : pageElements.get(
+          Object.keys(pageElements).find((key) => key === selector)!
+        )?.element ?? null
+    : null;
+
+  onResize();
+};
+
+const renderHTML = (newHTML: string) => {
+  contentContainer.innerHTML = `${newHTML}`;
+
+  pageElements.clear();
 
   contentContainer.querySelectorAll("*").forEach((elem) => {
-    originalStyles.setValue(elem, clone(window.getComputedStyle(elem)));
+    pageElements.set(getSelector(elem), {
+      element: elem as HTMLElement,
+      originalStyles: clone(window.getComputedStyle(elem)),
+    });
   });
 
   states.innerPage = 0;
@@ -55,19 +109,14 @@ onPageHtml((newHtml) => {
   states.lineHeightPercentage = states.lineHeightPercentage;
   states.align = states.align;
   states.fontFamily = states.fontFamily;
-
-  onResize();
-});
-
-const onNewInnerPage = async () => {
-  firstVisibleElement = await findFirstVisibleElement(contentContainer);
-  console.log(firstVisibleElement);
 };
 
 const onResize = async () => {
   innerPages = calculateInnerPages();
 
-  if (firstVisibleElement != null) {
+  if (firstVisibleElement === "end") {
+    states.innerPage = innerPages - 1;
+  } else if (firstVisibleElement != null) {
     for (let i = 0; i < innerPages; i++) {
       states.innerPage = i;
       if (await isElementVisible(firstVisibleElement)) {
@@ -79,8 +128,8 @@ const onResize = async () => {
   }
 };
 
-onMoveInnerPage((previous) => {
-  const newInnerPage = states.innerPage - (+previous * 2 - 1);
+onMoveInnerPage(async (offset) => {
+  const newInnerPage = states.innerPage + offset;
 
   if (newInnerPage < 0) {
     requestPreviousPage();
@@ -88,11 +137,17 @@ onMoveInnerPage((previous) => {
     requestNextPage();
   } else {
     states.innerPage = newInnerPage;
-    onNewInnerPage();
+    firstVisibleElement = await findFirstVisibleElement(contentContainer);
+    // updateLocation(
+    //   currentPageIndex,
+    //   firstVisibleElement ? getSelector(firstVisibleElement) : ""
+    // );
   }
 });
 
 window.addEventListener("resize", () => onResize());
+
+// notifyLoaded();
 
 // // Testing
 // (globalThis as any).test = () => {

@@ -13,7 +13,5 @@
     "vite": "^2.9.7",
     "vite-plugin-singlefile": "0.7.1"
   },
-  "dependencies": {
-    "just-clone": "^5.0.1"
-  }
+  "dependencies": {}
 }

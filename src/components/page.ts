@@ -1,4 +1,3 @@
-import clone from "just-clone";
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 import getSelector from "../utils/getSelector";
@@ -47,7 +46,10 @@ class Page {
   public innerPages = 0;
   public pageElements = new Map<
     string,
-    { element: HTMLElement; originalStyles: CSSStyleDeclaration }
+    {
+      element: HTMLElement;
+      originalStyles: { fontSize: string; lineHeight: string };
+    }
   >();
   public pageIndex: number | null = null;
 
@@ -113,9 +115,13 @@ class Page {
     this.pageElements.clear();
 
     this.element.querySelectorAll("*").forEach((elem) => {
+      const styles = window.getComputedStyle(elem);
       this.pageElements.set(getSelector(elem), {
         element: elem as HTMLElement,
-        originalStyles: clone(window.getComputedStyle(elem)),
+        originalStyles: {
+          fontSize: styles.fontSize,
+          lineHeight: styles.lineHeight,
+        },
       });
     });
     this.loading = false;

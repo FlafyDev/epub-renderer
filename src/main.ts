@@ -1,11 +1,15 @@
 import "./style.css";
 import {
   notifyLoaded,
+  onMoveInnerPage,
   onPageData,
   onSetLocation,
+  requestNextPage,
   requestPages,
+  requestPreviousPage,
 } from "./flutterCom";
 import Page from "./components/page";
+import findFirstVisibleElement from "./utils/findFirstVisibleElement";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -143,23 +147,25 @@ onSetLocation(async (index, selector) => {
   if (pagesToRequest.length > 0) requestPages(pagesToRequest);
 });
 
-// onMoveInnerPage(async (offset) => {
-//   const newInnerPage = middlePageComp.innerPage + offset;
+onMoveInnerPage(async (offset) => {
+  const currentPage = pageComps.get(currentPageIndex)!;
+  if (!currentPage) {
+    return;
+  }
 
-//   console.log(newInnerPage);
+  const newInnerPage = currentPage.innerPage + offset;
 
-//   if (newInnerPage < 0) {
-//     requestPreviousPage();
-//   } else if (newInnerPage >= middlePageComp.innerPages) {
-//     requestNextPage();
-//   } else {
-//     middlePageComp.innerPage = newInnerPage;
-//     middlePageComp.firstVisibleElement = await findFirstVisibleElement(
-//       middlePageComp.element
-//     );
-//     sendLocation();
-//   }
-// });
+  if (newInnerPage < 0) {
+    requestPreviousPage();
+  } else if (newInnerPage >= currentPage.innerPages) {
+    requestNextPage();
+  } else {
+    currentPage.innerPage = newInnerPage;
+    currentPage.firstVisibleElement = await findFirstVisibleElement(
+      currentPage.element
+    );
+  }
+});
 
 // const sendLocation = () => {
 //   updateLocation(

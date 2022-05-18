@@ -1,7 +1,7 @@
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 import getSelector from "../utils/getSelector";
-import isElementVisible from "../utils/isElementVisible";
+import findFirstVisibleElement from "../utils/findFirstVisibleElement";
 
 interface StyleProperties {
   margin: {
@@ -93,7 +93,7 @@ class Page {
     } else if (this.firstVisibleElement) {
       for (let i = 0; i < this.innerPages; i++) {
         this.innerPage = i;
-        if (await isElementVisible(this.firstVisibleElement)) {
+        if (await findFirstVisibleElement([this.firstVisibleElement])) {
           break;
         }
       }

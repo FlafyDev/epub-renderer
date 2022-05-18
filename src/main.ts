@@ -9,7 +9,7 @@ import {
   requestPreviousPage,
 } from "./flutterCom";
 import Page from "./components/page";
-import findFirstVisibleElement from "./utils/findFirstVisibleElement";
+import deepSearchFirstVisibleElement from "./utils/deepSearchFirstVisibleElement";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -161,7 +161,7 @@ onMoveInnerPage(async (offset) => {
     requestNextPage();
   } else {
     currentPage.innerPage = newInnerPage;
-    currentPage.firstVisibleElement = await findFirstVisibleElement(
+    currentPage.firstVisibleElement = await deepSearchFirstVisibleElement(
       currentPage.element
     );
   }

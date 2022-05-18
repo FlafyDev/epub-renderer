@@ -1,11 +1,11 @@
-// let currentPage = 0;
+// let currentPage = 10;
 
 // const methods: { [method: string]: (message: { message: string }) => void } = {
 //   getPages: ({ message }) => {
 //     const pages = message.split(",").map((elem) => parseInt(elem));
 //     for (let i = 0; i < pages.length; i++) {
 //       let content = "";
-//       for (let j = 0; j < 5000; j++) {
+//       for (let j = 0; j < 500; j++) {
 //         content += `<div>Page ${pages[i]} -- ${j}</div>`;
 //       }
 //       (window as any).pageData(pages[i], content);
@@ -15,12 +15,13 @@
 //     (window as any).setLocation(currentPage, "");
 //   },
 //   nextPage: (arg) => {
-//     currentPage++;
-//     (window as any).setLocation(currentPage, "");
+//     (window as any).setLocation(++currentPage, "");
 //   },
 //   previousPage: (arg) => {
-//     currentPage--;
-//     (window as any).setLocation(currentPage, "end");
+//     (window as any).setLocation(--currentPage, "end");
+//   },
+//   updateLocation: (arg) => {
+//     currentPage = parseInt(arg.message.split(",").at(0)!);
 //   },
 // };
 
@@ -31,7 +32,7 @@
 // });
 
 const callChannel = (name: string, message?: string) => {
-  console.log(`${name}: "${message}"`);
+  // console.log(`${name}: "${message}"`);
   return (window as any)[name].postMessage(message) as void;
 };
 
@@ -63,11 +64,11 @@ export const requestPages = (pages: number[]) => {
   callChannel("getPages", pages.join(","));
 };
 
-// export const notifyLoaded = () => {
-//   callChannel("loaded");
-// };
+export const notifyLoaded = () => {
+  callChannel("loaded");
+};
 
 // TODO use this
-export const updateLocation = (pageIndex: number, elementSelector: string) => {
-  callChannel("updateLocation", `${pageIndex},${elementSelector}`);
-};
+// export const updateLocation = (pageIndex: number, elementSelector: string) => {
+//   callChannel("updateLocation", `${pageIndex},${elementSelector}`);
+// };

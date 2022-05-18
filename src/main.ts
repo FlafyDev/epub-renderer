@@ -1,153 +1,178 @@
 import "./style.css";
 import {
-  // notifyLoaded,
-  onMoveInnerPage,
+  notifyLoaded,
   onPageData,
   onSetLocation,
-  requestNextPage,
   requestPages,
-  requestPreviousPage,
-  // updateLocation,
 } from "./flutterCom";
-import getSelector from "./utils/getSelector";
-import { States } from "./states";
-import clone from "just-clone";
-import findFirstVisibleElement from "./utils/findFirstVisibleElement";
-import clamp from "./utils/clamp";
-import isElementVisible from "./utils/isElementVisible";
+import Page from "./components/page";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
-(globalThis as any).page = 0;
-app.innerHTML = `
-<div id="contentContainer"></div>
-`;
-// <button style="position: fixed; inset: 0; height: 50px;" onclick="globalThis.test();">Change page</button>
-
-const contentContainer = document.getElementById("contentContainer")!;
-const pageElements = new Map<
-  string,
-  { element: HTMLElement; originalStyles: CSSStyleDeclaration }
->();
-
-const states = new States(contentContainer, pageElements);
-let innerPages = 0;
-let firstVisibleElement: HTMLElement | null | "end" = null;
 
 const cachedPages = new Map<number, string>();
-let pendingPageToRender: [number, string] | null;
-const calculateInnerPages = () => {
-  // Equation: `entireWidth = columnWidth * innerPages + columnGap * (innerPages - 1) - (left + right) * innerPages`
-  const entireWidth = contentContainer.scrollWidth;
-  const styles = window.getComputedStyle(contentContainer);
-  const columnWidth = parseFloat(styles.columnWidth);
-  const columnGap = parseFloat(styles.columnGap);
-  return (
-    (entireWidth + columnGap) /
-    (columnWidth + columnGap - states.margin.side * 2)
-  );
+let currentPageIndex = 0;
+const pageComps = new Map<number, Page>();
+const numOfPageComps = 3;
+const pendingSetLocation: [number, string] | null = null;
+
+for (let i = 0; i < numOfPageComps; i++) {
+  const page = new Page(app);
+  if (i !== 0) {
+    page.visible = false;
+  }
+  pageComps.set(i, page);
+}
+
+const renderPage = (pageComp: Page, index: number, selector = "") => {
+  // Don't rerender if the page is already loaded with the correct page.
+  if (pageComp.pageIndex !== index) {
+    pageComp.pageIndex = index;
+    pageComp.renderHTML(cachedPages.get(index)!);
+  }
+
+  pageComp.firstVisibleElement = selector
+    ? selector === "end"
+      ? "end"
+      : pageComp.pageElements.get(
+          Array.from(pageComp.pageElements.keys()).find(
+            (key) => key === selector
+          )!
+        )?.element ?? null
+    : null;
+
+  pageComp.innerPage = 0;
+  pageComp.syncInnerPage();
 };
+
+const pageDataListeningList = new Map<number, ((html: string) => void)[]>();
+
+const getPageData = async (pageIndex: number) => {
+  const cachedPageHTML = cachedPages.get(pageIndex);
+  if (cachedPageHTML !== undefined) {
+    return cachedPageHTML;
+  }
+  let listeningList = pageDataListeningList.get(pageIndex);
+
+  if (listeningList === undefined) {
+    listeningList = [];
+    pageDataListeningList.set(pageIndex, listeningList);
+  }
+
+  const promise = new Promise<string>((resolve) => {
+    listeningList!.push((html) => {
+      cachedPages.set(pageIndex, html);
+      resolve(html);
+    });
+  });
+
+  requestPages([pageIndex]);
+
+  return promise;
+};
+
+(window as any).getPageData = getPageData;
 
 // Events
 onPageData((index, html) => {
   cachedPages.set(index, html);
 
-  console.log(`on data of ${index}`);
+  const listeningList = pageDataListeningList.get(index);
+  if (listeningList !== undefined) {
+    listeningList.forEach((callback) => {
+      callback(html);
+    });
 
-  if (pendingPageToRender?.[0] === index) {
-    renderPage(pendingPageToRender[0], pendingPageToRender[1]);
-    pendingPageToRender = null;
+    pageDataListeningList.delete(index);
   }
 });
 
-onSetLocation((index, selector) => {
+onSetLocation(async (index, selector) => {
   const pagesToRequest: number[] = [];
+  currentPageIndex = index;
 
-  const cachedPageHTML = cachedPages.get(index);
-  if (cachedPageHTML) {
-    renderPage(index, selector);
-  } else {
-    pendingPageToRender = [index, selector];
-    pagesToRequest.push(index);
+  const missingKeys: number[] = [];
+  const pageIndexes: number[] = [];
+
+  for (let i = 0; i < numOfPageComps; i++) {
+    const pageIndex = currentPageIndex + i - Math.floor(numOfPageComps / 2);
+    pageIndexes.push(pageIndex);
+    if (!pageComps.has(pageIndex)) {
+      missingKeys.push(pageIndex);
+    }
   }
 
-  // if (!cachedPages.get(index - 1)) pagesToRequest.push(index - 1);
-  // if (!cachedPages.get(index + 1)) pagesToRequest.push(index + 1);
+  for (const key of Array.from(pageComps.keys())) {
+    if (missingKeys.length === 0) {
+      break;
+    }
+    if (!pageIndexes.includes(key)) {
+      pageComps.set(missingKeys.pop()!, pageComps.get(key)!);
+      pageComps.delete(key);
+    }
+  }
 
-  console.log(`Requesting pages: ${pagesToRequest}`);
+  pageIndexes.sort(
+    (a, b) =>
+      Math.abs(a - currentPageIndex) - Math.abs(b - currentPageIndex) || b - a
+  );
+
+  pageIndexes.forEach(async (pageIndex) => {
+    const pageComp = pageComps.get(pageIndex)!;
+    pageComp.visible = pageIndex === currentPageIndex;
+  });
+
+  for (const pageIndex of pageIndexes) {
+    const pageComp = pageComps.get(pageIndex)!;
+
+    await getPageData(pageIndex);
+    renderPage(
+      pageComp,
+      pageIndex,
+      pageIndex < currentPageIndex
+        ? "end"
+        : pageIndex > currentPageIndex
+        ? ""
+        : selector
+    );
+
+    if (pageIndex === currentPageIndex) {
+      await new Promise((r) => setTimeout(r, 1));
+    }
+  }
+
   if (pagesToRequest.length > 0) requestPages(pagesToRequest);
 });
 
-const renderPage = (index: number, selector = "") => {
-  renderHTML(cachedPages.get(index)!);
+// onMoveInnerPage(async (offset) => {
+//   const newInnerPage = middlePageComp.innerPage + offset;
 
-  firstVisibleElement = selector
-    ? selector === "end"
-      ? "end"
-      : pageElements.get(
-          Object.keys(pageElements).find((key) => key === selector)!
-        )?.element ?? null
-    : null;
+//   console.log(newInnerPage);
 
-  onResize();
-};
+//   if (newInnerPage < 0) {
+//     requestPreviousPage();
+//   } else if (newInnerPage >= middlePageComp.innerPages) {
+//     requestNextPage();
+//   } else {
+//     middlePageComp.innerPage = newInnerPage;
+//     middlePageComp.firstVisibleElement = await findFirstVisibleElement(
+//       middlePageComp.element
+//     );
+//     sendLocation();
+//   }
+// });
 
-const renderHTML = (newHTML: string) => {
-  contentContainer.innerHTML = `${newHTML}`;
+// const sendLocation = () => {
+//   updateLocation(
+//     currentPageIndex,
+//     typeof middlePageComp.firstVisibleElement === "string"
+//       ? middlePageComp.firstVisibleElement
+//       : middlePageComp.firstVisibleElement
+//       ? getSelector(middlePageComp.firstVisibleElement)
+//       : ""
+//   );
+// };
 
-  pageElements.clear();
-
-  contentContainer.querySelectorAll("*").forEach((elem) => {
-    pageElements.set(getSelector(elem), {
-      element: elem as HTMLElement,
-      originalStyles: clone(window.getComputedStyle(elem)),
-    });
-  });
-
-  states.innerPage = 0;
-  states.margin = states.margin;
-  states.fontSizePercentage = states.fontSizePercentage;
-  states.lineHeightPercentage = states.lineHeightPercentage;
-  states.align = states.align;
-  states.fontFamily = states.fontFamily;
-};
-
-const onResize = async () => {
-  innerPages = calculateInnerPages();
-
-  if (firstVisibleElement === "end") {
-    states.innerPage = innerPages - 1;
-  } else if (firstVisibleElement != null) {
-    for (let i = 0; i < innerPages; i++) {
-      states.innerPage = i;
-      if (await isElementVisible(firstVisibleElement)) {
-        break;
-      }
-    }
-  } else {
-    states.innerPage = clamp(states.innerPage, 0, innerPages - 1);
-  }
-};
-
-onMoveInnerPage(async (offset) => {
-  const newInnerPage = states.innerPage + offset;
-
-  if (newInnerPage < 0) {
-    requestPreviousPage();
-  } else if (newInnerPage >= innerPages) {
-    requestNextPage();
-  } else {
-    states.innerPage = newInnerPage;
-    firstVisibleElement = await findFirstVisibleElement(contentContainer);
-    // updateLocation(
-    //   currentPageIndex,
-    //   firstVisibleElement ? getSelector(firstVisibleElement) : ""
-    // );
-  }
-});
-
-window.addEventListener("resize", () => onResize());
-
-// notifyLoaded();
+notifyLoaded();
 
 // // Testing
 // (globalThis as any).test = () => {

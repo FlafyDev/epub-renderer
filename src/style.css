@@ -13,10 +13,3 @@ body {
   color: white;
   background-color: black;
 }
-
-#contentContainer {
-  column-width: 100vw;
-  position: fixed;
-  inset: 0;
-  word-spacing: 2px;
-}

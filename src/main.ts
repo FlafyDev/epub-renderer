@@ -13,7 +13,7 @@ const cachedPages = new Map<number, string>();
 let currentPageIndex = 0;
 const pageComps = new Map<number, Page>();
 const numOfPageComps = 3;
-const pendingSetLocation: [number, string] | null = null;
+// const pendingSetLocation: [number, string] | null = null;
 
 for (let i = 0; i < numOfPageComps; i++) {
   const page = new Page(app);

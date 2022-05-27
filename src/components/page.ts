@@ -16,21 +16,28 @@ interface StyleProperties {
 }
 
 class Page {
-  public element: HTMLElement;
-
   constructor(public parentElement: HTMLElement) {
+    this._id = `id${Math.random().toString(36).slice(2, 14)}`;
+
     this.element = document.createElement("div");
+    this.element.id = this._id;
     this.element.style.columnWidth = "100vw";
     this.element.style.position = "fixed";
     this.element.style.inset = "0";
     this.element.style.wordSpacing = "2px";
-    this.parentElement.appendChild(this.element);
+    this.element.className = "page";
+
+    this.styleElement = document.createElement("style");
 
     this.visible = true;
 
+    this.parentElement.appendChild(this.element);
+    this.parentElement.appendChild(this.styleElement);
     window.addEventListener("resize", () => this.syncInnerPage());
   }
 
+  public element: HTMLElement;
+  public styleElement: HTMLStyleElement;
   public firstVisibleElement: HTMLElement | null | "end" = null;
   public style: StyleProperties = {
     margin: {
@@ -41,7 +48,7 @@ class Page {
     fontSizePercentage: 1.125,
     lineHeightPercentage: 1.2,
     align: "left",
-    fontFamily: "Literata",
+    fontFamily: "Arial",
   };
   public innerPages = 0;
   public pageElements = new Map<
@@ -51,11 +58,13 @@ class Page {
       originalStyles: { fontSize: string; lineHeight: string };
     }
   >();
+  public smooth: boolean = false;
   public pageIndex: number | null = null;
 
   private _visible = false;
   private _loading = false;
   private _innerPage = 0;
+  private _id;
 
   get innerPage() {
     return this._innerPage;
@@ -128,6 +137,20 @@ class Page {
   };
 
   updateStyle = () => {
+    this.styleElement.innerHTML = `
+    #${this._id} {
+      position: absolute;
+      content: "";
+      z-index: -10;
+      inset: -100px;
+      width: ${this.element.scrollWidth}px;
+      background-color: black;
+    }`;
+
+    this.element.style.transition = this.smooth
+      ? "left 1s cubic-bezier(0.075, 0.82, 0.165, 1)"
+      : "";
+
     this.element.style.textAlign = this.style.align;
 
     this.element.style.fontFamily = this.style.fontFamily;

@@ -10,6 +10,7 @@ import {
 } from "./flutterCom";
 import Page from "./components/page";
 import deepSearchFirstVisibleElement from "./utils/deepSearchFirstVisibleElement";
+import sleep from "./utils/sleep";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -77,6 +78,12 @@ const getPageData = async (pageIndex: number) => {
 (window as any).getPageData = getPageData;
 
 // Events
+// onRequestScreenshot(() => {
+//   html2canvas(pageComps.get(currentPageIndex)!.element).then((canvas) => {
+//     document.body.appendChild(canvas);
+//   });
+// });
+
 onPageData((index, html) => {
   cachedPages.set(index, html);
 
@@ -90,55 +97,75 @@ onPageData((index, html) => {
   }
 });
 
+// Sets the current page.
 onSetLocation(async (index, selector) => {
   const pagesToRequest: number[] = [];
   currentPageIndex = index;
 
-  const missingKeys: number[] = [];
+  // Page indexes that are not loaded yet
+  const missingPageIndexes: number[] = [];
+  // All the page indexes that need to be loaded.
   const pageIndexes: number[] = [];
 
+  // Set $missingPageIndexes and $pageIndexes
   for (let i = 0; i < numOfPageComps; i++) {
     const pageIndex = currentPageIndex + i - Math.floor(numOfPageComps / 2);
     pageIndexes.push(pageIndex);
     if (!pageComps.has(pageIndex)) {
-      missingKeys.push(pageIndex);
+      missingPageIndexes.push(pageIndex);
     }
   }
 
+  // Load all the missing page indexes (clears $missingPageIndexes)
   for (const key of Array.from(pageComps.keys())) {
-    if (missingKeys.length === 0) {
+    if (missingPageIndexes.length === 0) {
       break;
     }
     if (!pageIndexes.includes(key)) {
-      pageComps.set(missingKeys.pop()!, pageComps.get(key)!);
+      pageComps.set(missingPageIndexes.pop()!, pageComps.get(key)!);
       pageComps.delete(key);
     }
   }
 
+  // Priorities nearer pages in the render list.
   pageIndexes.sort(
     (a, b) =>
       Math.abs(a - currentPageIndex) - Math.abs(b - currentPageIndex) || b - a
   );
 
+  // Set which pages should be visible.
   pageIndexes.forEach(async (pageIndex) => {
     const pageComp = pageComps.get(pageIndex)!;
-    pageComp.visible = pageIndex === currentPageIndex;
+    if (pageComp.visible && pageComp.pageIndex === index - 1) {
+      pageComp.element.style.zIndex = "100";
+      pageComp.smooth = true;
+      console.log(pageComp.innerPages);
+      pageComp.innerPage = pageComp.innerPages - 0;
+      // await sleep(1000);
+      // pageComp.element.style.left = "0px";
+      // pageComp.element.style.zIndex = "0";
+      // pageComp.visible = false;
+    } else {
+      pageComp.visible = pageIndex === currentPageIndex;
+    }
   });
 
+  // Render pages.
   for (const pageIndex of pageIndexes) {
     const pageComp = pageComps.get(pageIndex)!;
 
     await getPageData(pageIndex);
-    renderPage(
-      pageComp,
-      pageIndex,
-      pageIndex < currentPageIndex
-        ? "end"
-        : pageIndex > currentPageIndex
-        ? ""
-        : selector
-    );
-
+    if (pageComp.pageIndex !== index - 1) {
+      renderPage(
+        pageComp,
+        pageIndex,
+        pageIndex < currentPageIndex
+          ? "end"
+          : pageIndex > currentPageIndex
+          ? ""
+          : selector
+      );
+    }
     if (pageIndex === currentPageIndex) {
       await new Promise((r) => setTimeout(r, 1));
     }
@@ -160,7 +187,9 @@ onMoveInnerPage(async (offset) => {
   } else if (newInnerPage >= currentPage.innerPages) {
     requestNextPage();
   } else {
+    currentPage.smooth = true;
     currentPage.innerPage = newInnerPage;
+    currentPage.smooth = false;
     currentPage.firstVisibleElement = await deepSearchFirstVisibleElement(
       currentPage.element
     );

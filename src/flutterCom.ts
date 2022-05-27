@@ -51,6 +51,10 @@ export const onMoveInnerPage = (callback: (offset: number) => void) => {
   (window as any).moveInnerPage = callback;
 };
 
+export const onRequestScreenshot = (callback: () => void) => {
+  (window as any).requestScreenshot = callback;
+};
+
 // To Flutter app
 export const requestNextPage = () => {
   callChannel("nextPage");

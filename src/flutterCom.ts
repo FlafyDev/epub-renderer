@@ -1,35 +1,35 @@
-// let currentPage = 10;
+let currentPage = 10;
 
-// const methods: { [method: string]: (message: { message: string }) => void } = {
-//   getPages: ({ message }) => {
-//     const pages = message.split(",").map((elem) => parseInt(elem));
-//     for (let i = 0; i < pages.length; i++) {
-//       let content = "";
-//       for (let j = 0; j < 500; j++) {
-//         content += `<div>Page ${pages[i]} -- ${j}</div>`;
-//       }
-//       (window as any).pageData(pages[i], content);
-//     }
-//   },
-//   loaded: (arg) => {
-//     (window as any).setLocation(currentPage, "");
-//   },
-//   nextPage: (arg) => {
-//     (window as any).setLocation(++currentPage, "");
-//   },
-//   previousPage: (arg) => {
-//     (window as any).setLocation(--currentPage, "end");
-//   },
-//   updateLocation: (arg) => {
-//     currentPage = parseInt(arg.message.split(",").at(0)!);
-//   },
-// };
+const methods: { [method: string]: (message: { message: string }) => void } = {
+  getPages: ({ message }) => {
+    const pages = message.split(",").map((elem) => parseInt(elem));
+    for (let i = 0; i < pages.length; i++) {
+      let content = "";
+      for (let j = 0; j < 100; j++) {
+        content += `<div>Page ${pages[i]} --------------------------------------- ${j}</div>`;
+      }
+      (window as any).pageData(pages[i], content);
+    }
+  },
+  loaded: (arg) => {
+    (window as any).setLocation(currentPage, "");
+  },
+  nextPage: (arg) => {
+    (window as any).setLocation(++currentPage, "");
+  },
+  previousPage: (arg) => {
+    (window as any).setLocation(--currentPage, "end");
+  },
+  updateLocation: (arg) => {
+    currentPage = parseInt(arg.message.split(",").at(0)!);
+  },
+};
 
-// Object.keys(methods).forEach((methodName) => {
-//   (window as any)[methodName] = {
-//     postMessage: (message: string) => methods[methodName]({ message: message }),
-//   };
-// });
+Object.keys(methods).forEach((methodName) => {
+  (window as any)[methodName] = {
+    postMessage: (message: string) => methods[methodName]({ message: message }),
+  };
+});
 
 const callChannel = (name: string, message?: string) => {
   // console.log(`${name}: "${message}"`);

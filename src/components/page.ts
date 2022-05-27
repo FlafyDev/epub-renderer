@@ -16,28 +16,18 @@ interface StyleProperties {
 }
 
 class Page {
-  constructor(public parentElement: HTMLElement) {
-    this._id = `id${Math.random().toString(36).slice(2, 14)}`;
-
+  constructor() {
     this.element = document.createElement("div");
-    this.element.id = this._id;
     this.element.style.columnWidth = "100vw";
     this.element.style.position = "fixed";
     this.element.style.inset = "0";
     this.element.style.wordSpacing = "2px";
     this.element.className = "page";
 
-    this.styleElement = document.createElement("style");
-
-    this.visible = true;
-
-    this.parentElement.appendChild(this.element);
-    this.parentElement.appendChild(this.styleElement);
     window.addEventListener("resize", () => this.syncInnerPage());
   }
 
   public element: HTMLElement;
-  public styleElement: HTMLStyleElement;
   public firstVisibleElement: HTMLElement | null | "end" = null;
   public style: StyleProperties = {
     margin: {
@@ -58,43 +48,19 @@ class Page {
       originalStyles: { fontSize: string; lineHeight: string };
     }
   >();
-  public smooth: boolean = false;
   public pageIndex: number | null = null;
-
-  private _visible = false;
-  private _loading = false;
   private _innerPage = 0;
-  private _id;
 
   get innerPage() {
     return this._innerPage;
   }
 
-  get visible() {
-    return this._visible;
-  }
-
-  set visible(value: boolean) {
-    this._visible = value;
-    this.updateVisibility();
-  }
-
-  get loading() {
-    return this._loading;
-  }
-
-  set loading(value: boolean) {
-    this._loading = value;
-    this.updateVisibility();
-  }
-
-  private updateVisibility() {
-    this.element.style.visibility = this._visible ? "visible" : "hidden";
-  }
+  destroy = () => {
+    this.element.remove();
+  };
 
   /// Makes sure you're on the correct innerPage.
   syncInnerPage = async () => {
-    this.loading = true;
     this.innerPages = calculateInnerPages(this.element, this.style.margin.side);
 
     if (this.firstVisibleElement === "end") {
@@ -109,7 +75,6 @@ class Page {
     } else {
       this.innerPage = clamp(this.innerPage, 0, this.innerPages - 1);
     }
-    this.loading = false;
   };
 
   set innerPage(value: number) {
@@ -118,7 +83,6 @@ class Page {
   }
 
   renderHTML = (newHTML: string) => {
-    this.loading = true;
     this.element.innerHTML = `${newHTML}`;
 
     this.pageElements.clear();
@@ -133,24 +97,9 @@ class Page {
         },
       });
     });
-    this.loading = false;
   };
 
   updateStyle = () => {
-    this.styleElement.innerHTML = `
-    #${this._id} {
-      position: absolute;
-      content: "";
-      z-index: -10;
-      inset: -100px;
-      width: ${this.element.scrollWidth}px;
-      background-color: black;
-    }`;
-
-    this.element.style.transition = this.smooth
-      ? "left 1s cubic-bezier(0.075, 0.82, 0.165, 1)"
-      : "";
-
     this.element.style.textAlign = this.style.align;
 
     this.element.style.fontFamily = this.style.fontFamily;
@@ -160,9 +109,18 @@ class Page {
     this.element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
     this.element.style.columnGap = `${this.style.margin.side}px`;
 
-    this.element.style.left = `calc(${this.innerPage * -100}vw + ${
+    // const distancePassed = (this.innerPage * 100) / 2;
+
+    this.element.style.backgroundColor = "orange";
+
+    const includeCalc = `${this.innerPage * 100}vw - ${
+      this.style.margin.side
+    }px * ${this.innerPage}`;
+    this.element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
+
+    this.element.style.left = `calc((${this.innerPage * -100}vw + ${
       this.style.margin.side * this.innerPage
-    }px)`;
+    }px) * ${this.element.style.scale || "1"})`;
 
     this.pageElements.forEach((props) => {
       props.element.style.fontSize = `${

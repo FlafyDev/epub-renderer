@@ -109,10 +109,6 @@ class Page {
     this.element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
     this.element.style.columnGap = `${this.style.margin.side}px`;
 
-    // const distancePassed = (this.innerPage * 100) / 2;
-
-    this.element.style.backgroundColor = "orange";
-
     const includeCalc = `${this.innerPage * 100}vw - ${
       this.style.margin.side
     }px * ${this.innerPage}`;

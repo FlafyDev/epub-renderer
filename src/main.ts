@@ -13,6 +13,8 @@ const transition: {
   mouseControl: boolean;
   startPos: number;
   currentPos: number;
+  leftPage: Page | null;
+  rightPage: Page | null;
   page: Page | null;
   animating: boolean;
 } = {
@@ -21,22 +23,30 @@ const transition: {
   mouseControl: false,
   startPos: 0,
   currentPos: 0,
-  page: null,
   animating: false,
+  leftPage: null,
+  rightPage: null,
+  page: null,
 };
 let currentPage: Page | null = null;
+let pageIndex = 0;
 
-currentPage = await createPage(11, 1);
+currentPage = await createPage(pageIndex, 1);
 app.appendChild(currentPage.container);
 
-transition.page = await createPage(13, 1);
-transition.page.container.style.visibility = "hidden";
-app.appendChild(transition.page.container);
-
-app.addEventListener("mousedown", (e) => {
-  if (!transition.animating) {
+app.addEventListener("mousedown", async (e) => {
+  if (!transition.animating && currentPage) {
     transition.mouseControl = true;
     transition.startPos = e.x;
+
+    transition.leftPage?.destroy();
+    transition.rightPage?.destroy();
+    transition.page?.destroy();
+
+    console.log(currentPage.container.parentElement);
+    transition.page = currentPage;
+    transition.leftPage = await createPage(pageIndex - 1, 1);
+    transition.rightPage = await createPage(pageIndex + 1, 1);
 
     updateTransition(e);
     updateProgressDisplay();
@@ -63,9 +73,21 @@ app.addEventListener("mouseup", (e) => {
 
 const update: FrameRequestCallback = (time) => {
   if (transition.animating) {
-    if (transition.progress <= 0.03 || transition.progress >= 1.97) {
+    if (transition.progress <= -0.97 || transition.progress >= 0.97) {
       transition.animating = false;
       transition.progress = 0;
+      transition.page?.destroy();
+      transition.page = null;
+
+      if (transition.targetProgress === 1) {
+        currentPage = transition.rightPage;
+        transition.rightPage = null;
+        pageIndex++;
+      } else {
+        pageIndex--;
+        currentPage = transition.leftPage;
+        transition.leftPage = null;
+      }
     } else {
       transition.progress = lerp(
         transition.progress,
@@ -81,25 +103,35 @@ const update: FrameRequestCallback = (time) => {
 window.requestAnimationFrame(update);
 
 const updateTransition = (e?: MouseEvent) => {
-  if (e) {
-    transition.progress =
-      (e.x - transition.startPos + app.clientWidth) / app.clientWidth;
-    transition.currentPos = e.x;
+  if (transition.page) {
+    if (e) {
+      transition.progress = (transition.startPos - e.x) / app.clientWidth;
+      transition.currentPos = e.x;
+    }
+
+    const progress = transition.progress ?? 0;
+
+    transition.targetProgress = transition.progress >= 0 ? 1 : -1;
+
+    let page: Page;
+
+    if (transition.targetProgress === 1) {
+      transition.leftPage?.container.remove();
+      app.appendChild(transition.rightPage!.container);
+      page = transition.rightPage!;
+    } else {
+      transition.rightPage?.container.remove();
+      app.appendChild(transition.leftPage!.container);
+      page = transition.leftPage!;
+    }
+
+    transition.page.container.style.left = `${progress * -100}vw`;
+    transition.page.container.style.visibility = "visible";
+    transition.page.container.style.zIndex = "100";
+
+    page.element.style.opacity = Math.abs(progress).toString();
+    page.container.style.scale = (Math.abs(progress) * 0.2 + 0.8).toString();
   }
-
-  const progress = transition.progress ?? 0;
-
-  transition.targetProgress = transition.progress > 1 ? 2 : 0;
-
-  transition.page!.container.style.left = `${(1 - progress) * -100}vw`;
-  transition.page!.container.style.visibility = "visible";
-  transition.page!.container.style.zIndex = "100";
-
-  currentPage!.element.style.opacity = Math.abs(1 - progress).toString();
-  currentPage!.container.style.scale = (
-    Math.abs(1 - progress) * 0.2 +
-    0.8
-  ).toString();
 };
 
 const progressElement = document.createElement("div");

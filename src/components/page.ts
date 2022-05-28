@@ -57,7 +57,6 @@ class Page {
       originalStyles: { fontSize: string; lineHeight: string };
     }
   >();
-  public pageIndex: number | null = null;
   private _innerPage = 0;
 
   get innerPage() {
@@ -65,7 +64,7 @@ class Page {
   }
 
   destroy = () => {
-    this.element.remove();
+    this.container.remove();
   };
 
   /// Makes sure you're on the correct innerPage.

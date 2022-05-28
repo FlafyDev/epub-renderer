@@ -19,14 +19,23 @@ class Page {
   constructor() {
     this.element = document.createElement("div");
     this.element.style.columnWidth = "100vw";
-    this.element.style.position = "fixed";
+    this.element.style.position = "absolute";
     this.element.style.inset = "0";
     this.element.style.wordSpacing = "2px";
     this.element.className = "page";
 
+    this.container = document.createElement("div");
+    this.container.style.background = "black";
+    this.container.style.position = "fixed";
+    this.container.style.inset = "0";
+    this.container.style.width = "100%";
+    this.container.style.height = "100%";
+    this.container.appendChild(this.element);
+
     window.addEventListener("resize", () => this.syncInnerPage());
   }
 
+  public container: HTMLElement;
   public element: HTMLElement;
   public firstVisibleElement: HTMLElement | null | "end" = null;
   public style: StyleProperties = {
@@ -109,14 +118,16 @@ class Page {
     this.element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
     this.element.style.columnGap = `${this.style.margin.side}px`;
 
+    // The clipPath css property is extremely weird to calculate to show only the current page
+    // because it thinks the whole element is just the first page.
     const includeCalc = `${this.innerPage * 100}vw - ${
       this.style.margin.side
     }px * ${this.innerPage}`;
     this.element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
 
-    this.element.style.left = `calc((${this.innerPage * -100}vw + ${
+    this.element.style.left = `calc(${this.innerPage * -100}vw + ${
       this.style.margin.side * this.innerPage
-    }px) * ${this.element.style.scale || "1"})`;
+    }px)`;
 
     this.pageElements.forEach((props) => {
       props.element.style.fontSize = `${

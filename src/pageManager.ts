@@ -1,5 +1,6 @@
 import Page from "./components/page";
-import createPage, { createNextPage, createPreviousPage } from "./createPage";
+import PageCreator from "./pageCreator";
+import Transition from "./transitions/transition";
 import lerp from "./utils/lerp";
 
 class MouseControl {
@@ -17,14 +18,23 @@ class PageManager {
   transitionPage: Page | null = null;
   isAnimating: boolean = false;
   currentPage: Page | null = null;
+  pageCreator: PageCreator;
 
-  constructor(public parent: HTMLElement, initialPage: number) {
+  constructor(
+    public parent: HTMLElement,
+    public transition: Transition,
+    initialPage: number
+  ) {
     parent.addEventListener("mousedown", (e) => {
       e.preventDefault();
       this.mouseDown(e.x);
     });
-    parent.addEventListener("mousemove", (e) => this.mouseMove(e.x));
+    parent.addEventListener("mousemove", (e) =>
+      this.mouseMove(e.x, e.movementX)
+    );
     parent.addEventListener("mouseup", (e) => this.mouseUp(e.x));
+
+    this.pageCreator = new PageCreator(parent);
 
     const animationFrame: FrameRequestCallback = (time) => {
       this.updateTransitionAnimation(time);
@@ -32,14 +42,20 @@ class PageManager {
     };
     window.requestAnimationFrame(animationFrame);
 
-    (async () => {
-      this.currentPage = await createPage(initialPage, 0);
-      this.parent.appendChild(this.currentPage.container);
-    })();
+    this.initialize(initialPage);
+  }
+
+  private async initialize(initialPage: number) {
+    this.currentPage = await this.pageCreator.createPage(initialPage, 0);
+    this.parent.appendChild(this.currentPage.container);
   }
 
   mouseDown = async (position: number) => {
-    if (!this.isAnimating && this.currentPage) {
+    if (
+      !this.isAnimating &&
+      this.currentPage &&
+      !this.mouseControl.isControlling
+    ) {
       this.mouseControl.isControlling = true;
       this.mouseControl.startPosition = position;
 
@@ -48,17 +64,30 @@ class PageManager {
       this.transitionPage?.destroy();
 
       this.transitionPage = this.currentPage;
-      this.previousPage = await createPreviousPage(this.currentPage);
-      this.nextPage = await createNextPage(this.currentPage);
-
+      this.previousPage = await this.pageCreator.createPreviousPage(
+        this.currentPage
+      );
+      this.nextPage = await this.pageCreator.createNextPage(this.currentPage);
+      this.targetProgress = 0;
       this.mouseControl.position = position;
       this.updateTransitionProgress();
       this.updateTransitionStyle();
     }
   };
 
-  mouseMove = (position: number) => {
+  mouseMove = (position: number, delta: number) => {
     if (this.mouseControl.isControlling) {
+      const mouseProgressPercentage = position / window.innerWidth;
+      console.log(Math.abs(delta));
+      if (Math.abs(delta) >= 5) {
+        this.targetProgress = delta < 0 ? 1 : -1;
+      } else if (
+        mouseProgressPercentage > 0.3 &&
+        mouseProgressPercentage < 0.7
+      ) {
+        this.targetProgress = 0;
+      }
+
       this.mouseControl.position = position;
       this.updateTransitionProgress();
       this.updateTransitionStyle();
@@ -79,7 +108,21 @@ class PageManager {
 
   updateTransitionAnimation: FrameRequestCallback = (_) => {
     if (this.isAnimating) {
-      if (this.transitionProgress <= -0.97 || this.transitionProgress >= 0.97) {
+      if (this.targetProgress === 0) {
+        if (
+          this.transitionProgress >= -0.005 &&
+          this.transitionProgress <= 0.005
+        ) {
+          this.isAnimating = false;
+          this.transitionProgress = 0;
+          this.currentPage = this.transitionPage;
+          console.log(this.currentPage);
+          this.transitionPage = null;
+        }
+      } else if (
+        this.transitionProgress <= -0.97 ||
+        this.transitionProgress >= 0.97
+      ) {
         this.isAnimating = false;
         this.transitionProgress = 0;
         this.transitionPage?.destroy();
@@ -92,49 +135,56 @@ class PageManager {
           this.currentPage = this.previousPage;
           this.previousPage = null;
         }
-      } else {
-        this.transitionProgress = lerp(
-          this.transitionProgress,
-          this.targetProgress,
-          0.2
-        );
       }
-
-      this.updateTransitionStyle();
+      this.updateTransitionStyle(
+        this.transitionPage === null &&
+          this.transitionProgress === 0 &&
+          this.targetProgress === 0
+      );
+      this.transitionProgress -= Math.min(
+        this.transitionProgress -
+          lerp(this.transitionProgress, this.targetProgress, 0.2),
+        0.15
+      );
     }
+  };
+
+  updateTransitionStyle = (back: boolean = false) => {
+    const progress = this.transitionProgress ?? 0;
+
+    const side = this.transitionProgress >= 0 ? 1 : -1;
+
+    let newPage: Page | null = this.currentPage;
+
+    if (this.transitionPage) {
+      if (side === 1) {
+        this.previousPage?.container.remove();
+        this.parent.appendChild(this.nextPage!.container);
+        newPage = this.nextPage!;
+      } else {
+        this.nextPage?.container.remove();
+        this.parent.appendChild(this.previousPage!.container);
+        newPage = this.previousPage!;
+      }
+    }
+
+    // console.log(
+    //   `transitionPage: ${
+    //     (transitionPage ?? this.transitionPage)?.pageIndex
+    //   } --- progress: ${progress}`
+    // );
+
+    this.transition.updateStyle(
+      !this.nextPage || !this.previousPage ? 1 : progress,
+      back ? newPage! : this.transitionPage,
+      back ? null : newPage!
+    );
   };
 
   updateTransitionProgress = () => {
     this.transitionProgress =
       (this.mouseControl.startPosition - this.mouseControl.position) /
       this.parent.clientWidth;
-  };
-
-  updateTransitionStyle = () => {
-    if (this.transitionPage) {
-      const progress = this.transitionProgress ?? 0;
-
-      this.targetProgress = this.transitionProgress >= 0 ? 1 : -1;
-
-      let page: Page;
-
-      if (this.targetProgress === 1) {
-        this.previousPage?.container.remove();
-        this.parent.appendChild(this.nextPage!.container);
-        page = this.nextPage!;
-      } else {
-        this.nextPage?.container.remove();
-        this.parent.appendChild(this.previousPage!.container);
-        page = this.previousPage!;
-      }
-
-      this.transitionPage.container.style.left = `${progress * -100}vw`;
-      this.transitionPage.container.style.visibility = "visible";
-      this.transitionPage.container.style.zIndex = "100";
-
-      page.element.style.opacity = Math.abs(progress).toString();
-      page.container.style.scale = (Math.abs(progress) * 0.2 + 0.8).toString();
-    }
   };
 }
 

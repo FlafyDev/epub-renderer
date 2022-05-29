@@ -1,11 +1,12 @@
 import "./style.css";
 import PageManager from "./pageManager";
+import { Swipe } from "./transitions";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.style.width = "100vw";
 app.style.height = "100vh";
 
-const pageManager = new PageManager(app, 0);
+const pageManager = new PageManager(app, new Swipe(), 0);
 
 // const progressElement = document.createElement("div");
 // progressElement.style.position = "fixed";

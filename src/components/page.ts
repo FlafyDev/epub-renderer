@@ -16,7 +16,7 @@ interface StyleProperties {
 }
 
 class Page {
-  constructor() {
+  constructor(public pageIndex: number) {
     this.element = document.createElement("div");
     this.element.style.columnWidth = "100vw";
     this.element.style.position = "absolute";

@@ -19,20 +19,43 @@ class PageManager {
   isAnimating: boolean = false;
   currentPage: Page | null = null;
   pageCreator: PageCreator;
+  previousTouch: Touch | null = null;
 
   constructor(
     public parent: HTMLElement,
     public transition: Transition,
     initialPage: number
   ) {
+    // Mouse gestures
     parent.addEventListener("mousedown", (e) => {
-      e.preventDefault();
       this.mouseDown(e.x);
     });
-    parent.addEventListener("mousemove", (e) =>
-      this.mouseMove(e.x, e.movementX)
-    );
+    parent.addEventListener("mousemove", (e) => {
+      console.log(e.x);
+      this.mouseMove(e.x, e.movementX);
+    });
     parent.addEventListener("mouseup", (e) => this.mouseUp(e.x));
+
+    // Touch gestures
+    parent.addEventListener("touchstart", (e) => {
+      const touch = e.touches[0];
+      this.mouseDown(touch.clientX);
+    });
+    parent.addEventListener("touchmove", (e) => {
+      const touch = e.touches[0];
+
+      if (this.previousTouch) {
+        const movementX = touch.clientX - this.previousTouch.clientX;
+
+        console.log(touch.clientX);
+        this.mouseMove(touch.clientX, movementX);
+      }
+
+      this.previousTouch = touch;
+    });
+    parent.addEventListener("touchend", () => {
+      this.mouseUp(this.previousTouch!.clientX);
+    });
 
     this.pageCreator = new PageCreator(parent);
 
@@ -116,7 +139,6 @@ class PageManager {
           this.isAnimating = false;
           this.transitionProgress = 0;
           this.currentPage = this.transitionPage;
-          console.log(this.currentPage);
           this.transitionPage = null;
         }
       } else if (

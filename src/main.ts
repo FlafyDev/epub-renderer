@@ -1,13 +1,17 @@
 import "./style.css";
 import PageManager from "./pageManager";
 import { Swipe } from "./transitions";
+// import { notifyLoaded, onMoveInnerPage, onSetLocation } from "./flutterCom";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.style.width = "100vw";
 app.style.height = "100vh";
 
-const pageManager = new PageManager(app, new Swipe(), 0);
+new PageManager(app, new Swipe(), 0);
 
+// onSetLocation((index, selector) => {});
+
+// notifyLoaded();
 // const progressElement = document.createElement("div");
 // progressElement.style.position = "fixed";
 // progressElement.style.inset = "0";
@@ -23,4 +27,3 @@ const pageManager = new PageManager(app, new Swipe(), 0);
 // document.body.appendChild(currentPage.element);
 
 // console.log(parseInt(page.element.style.scale || "1"));
-// notifyLoaded();

@@ -5,7 +5,7 @@ const methods: { [method: string]: (message: { message: string }) => void } = {
     const pages = message.split(",").map((elem) => parseInt(elem));
     for (let i = 0; i < pages.length; i++) {
       let content = "";
-      for (let j = 0; j < 100; j++) {
+      for (let j = 0; j < 1000; j++) {
         content += `<div>Page ${pages[i]} --------------------------------------- ${j}</div>`;
       }
       (window as any).pageData(pages[i], content);

@@ -5,8 +5,8 @@
 //     const pages = message.split(",").map((elem) => parseInt(elem));
 //     for (let i = 0; i < pages.length; i++) {
 //       let content = "";
-//       for (let j = 0; j < 500; j++) {
-//         content += `<div>Page ${pages[i]} -- ${j}</div>`;
+//       for (let j = 0; j < 1000 + pages[i]; j++) {
+//         content += `<div>Page ${pages[i]} --------------------------------------- ${j}</div>`;
 //       }
 //       (window as any).pageData(pages[i], content);
 //     }

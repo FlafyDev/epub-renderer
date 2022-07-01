@@ -11,13 +11,5 @@ body {
 
 body {
   color: white;
-}
-
-.page::before {
-  position: absolute;
-  content: "";
-  z-index: -10;
-  inset: -100px;
-  width: 10000%;
   background-color: black;
 }

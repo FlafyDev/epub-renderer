@@ -1,7 +1,5 @@
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
-import getSelector from "../utils/getSelector";
-import findFirstVisibleElement from "../utils/findFirstVisibleElement";
 
 interface StyleProperties {
   margin: {
@@ -16,155 +14,94 @@ interface StyleProperties {
 }
 
 class Page {
-  constructor(public parentElement: HTMLElement) {
-    this._id = `id${Math.random().toString(36).slice(2, 14)}`;
+  constructor(
+    public readonly parent: Element,
+    public readonly pageIndex: number,
+    private _innerPage: number,
+    html: string,
+    private readonly style: StyleProperties
+  ) {
+    this._element = document.createElement("div");
+    this._element.style.columnWidth = "100vw";
+    this._element.style.position = "absolute";
+    this._element.style.inset = "0";
+    this._element.style.wordSpacing = "2px";
+    this._element.className = "page";
 
-    this.element = document.createElement("div");
-    this.element.id = this._id;
-    this.element.style.columnWidth = "100vw";
-    this.element.style.position = "fixed";
-    this.element.style.inset = "0";
-    this.element.style.wordSpacing = "2px";
-    this.element.className = "page";
+    this.container = document.createElement("div");
+    this.container.style.background = "black";
+    this.container.style.position = "fixed";
+    this.container.style.inset = "0";
+    this.container.style.width = "100%";
+    this.container.style.height = "100%";
 
-    this.styleElement = document.createElement("style");
+    this.container.appendChild(this._element);
+    this.parent.appendChild(this.container);
 
-    this.visible = true;
+    this.renderHTML(html);
+    this.applyStyle();
 
-    this.parentElement.appendChild(this.element);
-    this.parentElement.appendChild(this.styleElement);
-    window.addEventListener("resize", () => this.syncInnerPage());
+    this._innerPages = calculateInnerPages(
+      this._element,
+      this.style.margin.side
+    );
+
+    if (this._innerPage === -1) {
+      this._innerPage = this.innerPages - 1;
+    } else {
+      this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
+    }
+
+    this.applyStyleShowInnerPage();
   }
 
-  public element: HTMLElement;
-  public styleElement: HTMLStyleElement;
-  public firstVisibleElement: HTMLElement | null | "end" = null;
-  public style: StyleProperties = {
-    margin: {
-      side: 28,
-      top: 50,
-      bottom: 20,
-    },
-    fontSizePercentage: 1.125,
-    lineHeightPercentage: 1.2,
-    align: "left",
-    fontFamily: "Arial",
-  };
-  public innerPages = 0;
-  public pageElements = new Map<
-    string,
-    {
-      element: HTMLElement;
-      originalStyles: { fontSize: string; lineHeight: string };
-    }
-  >();
-  public smooth: boolean = false;
-  public pageIndex: number | null = null;
+  public container: HTMLElement;
 
-  private _visible = false;
-  private _loading = false;
-  private _innerPage = 0;
-  private _id;
+  get innerPages() {
+    return this._innerPages;
+  }
 
   get innerPage() {
     return this._innerPage;
   }
 
-  get visible() {
-    return this._visible;
-  }
+  private _innerPages = 0;
+  private _element: HTMLElement;
+  private _pageElements: {
+    element: HTMLElement;
+    originalStyles: { fontSize: string; lineHeight: string };
+  }[] = [];
 
-  set visible(value: boolean) {
-    this._visible = value;
-    this.updateVisibility();
-  }
-
-  get loading() {
-    return this._loading;
-  }
-
-  set loading(value: boolean) {
-    this._loading = value;
-    this.updateVisibility();
-  }
-
-  private updateVisibility() {
-    this.element.style.visibility = this._visible ? "visible" : "hidden";
-  }
-
-  /// Makes sure you're on the correct innerPage.
-  syncInnerPage = async () => {
-    this.loading = true;
-    this.innerPages = calculateInnerPages(this.element, this.style.margin.side);
-
-    if (this.firstVisibleElement === "end") {
-      this.innerPage = this.innerPages - 1;
-    } else if (this.firstVisibleElement) {
-      for (let i = 0; i < this.innerPages; i++) {
-        this.innerPage = i;
-        if (await findFirstVisibleElement([this.firstVisibleElement])) {
-          break;
-        }
-      }
-    } else {
-      this.innerPage = clamp(this.innerPage, 0, this.innerPages - 1);
-    }
-    this.loading = false;
+  destroy = () => {
+    this.container.remove();
   };
 
-  set innerPage(value: number) {
-    this._innerPage = value;
-    this.updateStyle();
-  }
+  private renderHTML = (html: string) => {
+    this._element.innerHTML = `${html}`;
 
-  renderHTML = (newHTML: string) => {
-    this.loading = true;
-    this.element.innerHTML = `${newHTML}`;
-
-    this.pageElements.clear();
-
-    this.element.querySelectorAll("*").forEach((elem) => {
-      const styles = window.getComputedStyle(elem);
-      this.pageElements.set(getSelector(elem), {
+    this._element.querySelectorAll("*").forEach((elem) => {
+      // const styles = window.getComputedStyle(elem);
+      this._pageElements.push({
         element: elem as HTMLElement,
         originalStyles: {
-          fontSize: styles.fontSize,
-          lineHeight: styles.lineHeight,
+          fontSize: "",
+          lineHeight: "",
         },
       });
     });
-    this.loading = false;
   };
 
-  updateStyle = () => {
-    this.styleElement.innerHTML = `
-    #${this._id} {
-      position: absolute;
-      content: "";
-      z-index: -10;
-      inset: -100px;
-      width: ${this.element.scrollWidth}px;
-      background-color: black;
-    }`;
+  private applyStyle = () => {
+    this._element.style.textAlign = this.style.align;
 
-    this.element.style.transition = this.smooth
-      ? "left 1s cubic-bezier(0.075, 0.82, 0.165, 1)"
-      : "";
+    this._element.style.fontFamily = this.style.fontFamily;
 
-    this.element.style.textAlign = this.style.align;
+    this._element.style.width = `calc(100vw - ${this.style.margin.side * 2}px)`;
+    this._element.style.height = `calc(100vh - ${this.style.margin.top})`;
+    this._element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
+    this._element.style.columnGap = `${this.style.margin.side}px`;
 
-    this.element.style.fontFamily = this.style.fontFamily;
-
-    this.element.style.width = `calc(100vw - ${this.style.margin.side * 2}px)`;
-    this.element.style.height = `calc(100vh - ${this.style.margin.top})`;
-    this.element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
-    this.element.style.columnGap = `${this.style.margin.side}px`;
-
-    this.element.style.left = `calc(${this.innerPage * -100}vw + ${
-      this.style.margin.side * this.innerPage
-    }px)`;
-
-    this.pageElements.forEach((props) => {
+    this._pageElements.forEach((props) => {
       props.element.style.fontSize = `${
         parseFloat(props.originalStyles.fontSize) *
         this.style.fontSizePercentage
@@ -176,6 +113,49 @@ class Page {
           : props.originalStyles.lineHeight
       } * ${this.style.lineHeightPercentage})`;
     });
+  };
+
+  private applyStyleShowInnerPage = () => {
+    // The clipPath css property is extremely weird to calculate to show only the current page
+    // because it thinks the whole element is just the first page.
+    const includeCalc = `${this.innerPage * 100}vw - ${
+      this.style.margin.side
+    }px * ${this.innerPage}`;
+    this._element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
+
+    this._element.style.left = `calc(${this.innerPage * -100}vw + ${
+      this.style.margin.side * this.innerPage
+    }px)`;
+  };
+
+  optimize = async () => {
+    await new Promise<void>((resolve) => {
+      let observed = 0;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          observed++;
+
+          const element = entry.target as HTMLElement;
+          if (entry.intersectionRatio > 0) {
+            // element.style.display = 'none';
+          } else {
+            element.style.display = "none";
+          }
+        });
+        if (observed >= this._pageElements.length) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+
+      this._pageElements.forEach((prop) => {
+        observer.observe(prop.element);
+      });
+    });
+
+    this._element.style.clipPath = "";
+
+    this._element.style.left = "";
   };
 }
 

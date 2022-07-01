@@ -9,6 +9,18 @@ app.style.height = "100vh";
 
 new PageManager(app, new Swipe(), 0);
 
+// const pageComp = new Page(app, 1, 0, await getPageData(1), {
+//   margin: {
+//     side: 28,
+//     top: 50,
+//     bottom: 20,
+//   },
+//   fontSizePercentage: 1.125,
+//   lineHeightPercentage: 1.2,
+//   align: "left",
+//   fontFamily: "Arial",
+// });
+
 // onSetLocation((index, selector) => {});
 
 // notifyLoaded();

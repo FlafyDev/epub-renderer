@@ -14,7 +14,7 @@ export class Swipe implements Transition {
     }
 
     if (newPage) {
-      newPage.element.style.opacity = Math.abs(progress).toString();
+      newPage.container.style.opacity = Math.abs(progress).toString();
       newPage.container.style.scale = (
         Math.abs(progress) * 0.2 +
         0.8

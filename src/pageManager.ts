@@ -31,7 +31,6 @@ class PageManager {
       this.mouseDown(e.x);
     });
     parent.addEventListener("mousemove", (e) => {
-      console.log(e.x);
       this.mouseMove(e.x, e.movementX);
     });
     parent.addEventListener("mouseup", (e) => this.mouseUp(e.x));
@@ -46,8 +45,6 @@ class PageManager {
 
       if (this.previousTouch) {
         const movementX = touch.clientX - this.previousTouch.clientX;
-
-        console.log(touch.clientX);
         this.mouseMove(touch.clientX, movementX);
       }
 
@@ -71,26 +68,23 @@ class PageManager {
   private async initialize(initialPage: number) {
     this.currentPage = await this.pageCreator.createPage(initialPage, 0);
     this.parent.appendChild(this.currentPage.container);
+    await this.animationDone();
   }
 
   mouseDown = async (position: number) => {
     if (
       !this.isAnimating &&
       this.currentPage &&
-      !this.mouseControl.isControlling
+      !this.mouseControl.isControlling &&
+      this.previousPage &&
+      this.nextPage
     ) {
       this.mouseControl.isControlling = true;
       this.mouseControl.startPosition = position;
 
-      this.previousPage?.destroy();
-      this.nextPage?.destroy();
       this.transitionPage?.destroy();
-
       this.transitionPage = this.currentPage;
-      this.previousPage = await this.pageCreator.createPreviousPage(
-        this.currentPage
-      );
-      this.nextPage = await this.pageCreator.createNextPage(this.currentPage);
+
       this.targetProgress = 0;
       this.mouseControl.position = position;
       this.updateTransitionProgress();
@@ -101,7 +95,6 @@ class PageManager {
   mouseMove = (position: number, delta: number) => {
     if (this.mouseControl.isControlling) {
       const mouseProgressPercentage = position / window.innerWidth;
-      console.log(Math.abs(delta));
       if (Math.abs(delta) >= 5) {
         this.targetProgress = delta < 0 ? 1 : -1;
       } else if (
@@ -129,6 +122,15 @@ class PageManager {
     }
   };
 
+  animationDone = async () => {
+    this.previousPage?.destroy();
+    this.nextPage?.destroy();
+    this.previousPage = await this.pageCreator.createPreviousPage(
+      this.currentPage!
+    );
+    this.nextPage = await this.pageCreator.createNextPage(this.currentPage!);
+  };
+
   updateTransitionAnimation: FrameRequestCallback = (_) => {
     if (this.isAnimating) {
       if (this.targetProgress === 0) {
@@ -140,6 +142,7 @@ class PageManager {
           this.transitionProgress = 0;
           this.currentPage = this.transitionPage;
           this.transitionPage = null;
+          this.animationDone();
         }
       } else if (
         this.transitionProgress <= -0.97 ||
@@ -157,6 +160,7 @@ class PageManager {
           this.currentPage = this.previousPage;
           this.previousPage = null;
         }
+        this.animationDone();
       }
       this.updateTransitionStyle(
         this.transitionPage === null &&
@@ -177,6 +181,10 @@ class PageManager {
     const side = this.transitionProgress >= 0 ? 1 : -1;
 
     let newPage: Page | null = this.currentPage;
+
+    if (this.nextPage === null || this.previousPage === null) {
+      return;
+    }
 
     if (this.transitionPage) {
       if (side === 1) {

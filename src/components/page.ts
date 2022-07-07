@@ -1,7 +1,7 @@
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 
-interface StyleProperties {
+export interface StyleProperties {
   margin: {
     side: number;
     top: number;
@@ -81,12 +81,12 @@ class Page {
     this._element.innerHTML = `${html}`;
 
     this._element.querySelectorAll("*").forEach((elem) => {
-      // const styles = window.getComputedStyle(elem);
+      const styles = window.getComputedStyle(elem);
       this._pageElements.push({
         element: elem as HTMLElement,
         originalStyles: {
-          fontSize: "",
-          lineHeight: "",
+          fontSize: styles.fontSize,
+          lineHeight: styles.lineHeight,
         },
       });
     });

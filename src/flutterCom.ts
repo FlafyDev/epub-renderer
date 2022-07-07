@@ -1,5 +1,7 @@
 // let currentPage = 10;
 
+import { StyleProperties } from "./components/page";
+
 // const methods: { [method: string]: (message: { message: string }) => void } = {
 //   getPages: ({ message }) => {
 //     const pages = message.split(",").map((elem) => parseInt(elem));
@@ -33,6 +35,10 @@ const callChannel = (name: string, message?: string) => {
 // From Flutter app
 export const onPage = (callback: (innerPage: number, html: string) => void) => {
   (window as any).page = callback;
+};
+
+export const onStyle = (callback: (style: StyleProperties) => void) => {
+  (window as any).style = callback;
 };
 
 // To Flutter app

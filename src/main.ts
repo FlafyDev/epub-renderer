@@ -1,13 +1,11 @@
 import "./style.css";
 import PageManager from "./pageManager";
-import { Swipe } from "./transitions";
-// import { notifyLoaded, onMoveInnerPage, onSetLocation } from "./flutterCom";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.style.width = "100vw";
 app.style.height = "100vh";
 
-new PageManager(app, new Swipe(), 0);
+new PageManager(app);
 
 // const pageComp = new Page(app, 1, 0, await getPageData(1), {
 //   margin: {

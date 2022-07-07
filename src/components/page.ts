@@ -16,7 +16,6 @@ interface StyleProperties {
 class Page {
   constructor(
     public readonly parent: Element,
-    public readonly pageIndex: number,
     private _innerPage: number,
     html: string,
     private readonly style: StyleProperties
@@ -46,11 +45,13 @@ class Page {
       this.style.margin.side
     );
 
-    if (this._innerPage === -1) {
-      this._innerPage = this.innerPages - 1;
-    } else {
-      this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
+    console.log(`inner pages: ${this._innerPages}`);
+
+    if (this._innerPage < 0) {
+      this._innerPage = this.innerPages + this._innerPage;
     }
+
+    this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
 
     this.applyStyleShowInnerPage();
   }
@@ -97,7 +98,7 @@ class Page {
     this._element.style.fontFamily = this.style.fontFamily;
 
     this._element.style.width = `calc(100vw - ${this.style.margin.side * 2}px)`;
-    this._element.style.height = `calc(100vh - ${this.style.margin.top})`;
+    this._element.style.height = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
     this._element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
     this._element.style.columnGap = `${this.style.margin.side}px`;
 

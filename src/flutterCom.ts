@@ -12,17 +12,11 @@
 //     }
 //   },
 //   loaded: (arg) => {
-//     (window as any).setLocation(currentPage, "");
+//     (window as any).page(currentPage, "");
 //   },
-//   nextPage: (arg) => {
-//     (window as any).setLocation(++currentPage, "");
-//   },
-//   previousPage: (arg) => {
-//     (window as any).setLocation(--currentPage, "end");
-//   },
-//   updateLocation: (arg) => {
-//     currentPage = parseInt(arg.message.split(",").at(0)!);
-//   },
+//   ready: (arg) => {
+
+//   }
 // };
 
 // Object.keys(methods).forEach((methodName) => {
@@ -37,39 +31,17 @@ const callChannel = (name: string, message?: string) => {
 };
 
 // From Flutter app
-export const onSetLocation = (
-  callback: (index: number, selector: string) => void
-) => {
-  (window as any).setLocation = callback;
-};
-
-export const onPageData = (callback: (index: number, html: string) => void) => {
-  (window as any).pageData = callback;
-};
-
-export const onMoveInnerPage = (callback: (offset: number) => void) => {
-  (window as any).moveInnerPage = callback;
-};
-
-export const onRequestScreenshot = (callback: () => void) => {
-  (window as any).requestScreenshot = callback;
+export const onPage = (callback: (innerPage: number, html: string) => void) => {
+  (window as any).page = callback;
 };
 
 // To Flutter app
-export const requestNextPage = () => {
-  callChannel("nextPage");
-};
-
-export const requestPreviousPage = () => {
-  callChannel("previousPage");
-};
-
-export const requestPages = (pages: number[]) => {
-  callChannel("getPages", pages.join(","));
-};
-
 export const notifyLoaded = () => {
   callChannel("loaded");
+};
+
+export const notifyReady = (innerPage: number, innerPages: number) => {
+  callChannel("ready", `${innerPage},${innerPages}`);
 };
 
 // TODO use this

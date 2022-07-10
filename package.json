@@ -12,5 +12,7 @@
     "vite": "^2.9.7",
     "vite-plugin-singlefile": "0.7.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "url-join": "^5.0.0"
+  }
 }

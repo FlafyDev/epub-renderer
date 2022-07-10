@@ -33,12 +33,22 @@ const callChannel = (name: string, message?: string) => {
 };
 
 // From Flutter app
-export const onPage = (callback: (innerPage: number, html: string) => void) => {
+export const onPage = (
+  callback: (pageFile: string, innerPage: number) => void
+) => {
   (window as any).page = callback;
 };
 
 export const onStyle = (callback: (style: StyleProperties) => void) => {
   (window as any).style = callback;
+};
+
+export const onCSS = (callback: (css: string) => void) => {
+  (window as any).css = callback;
+};
+
+export const onData = (callback: (baseUrl: string) => void) => {
+  (window as any).data = callback;
 };
 
 // To Flutter app

@@ -7,10 +7,11 @@ export interface StyleProperties {
     top: number;
     bottom: number;
   };
-  fontSizePercentage: number;
-  lineHeightPercentage: number;
+  fontSizeMultiplier: number;
+  lineHeightMultiplier: number;
   align: "left" | "center" | "right" | "justify";
   fontFamily: string;
+  fontPath: string;
 }
 
 class Page {
@@ -18,7 +19,8 @@ class Page {
     public readonly parent: Element,
     private _innerPage: number,
     html: string,
-    private readonly style: StyleProperties
+    private readonly style: StyleProperties,
+    public readonly filePath: string
   ) {
     this._element = document.createElement("div");
     this._element.style.columnWidth = "100vw";
@@ -93,10 +95,6 @@ class Page {
   };
 
   private applyStyle = () => {
-    this._element.style.textAlign = this.style.align;
-
-    this._element.style.fontFamily = this.style.fontFamily;
-
     this._element.style.width = `calc(100vw - ${this.style.margin.side * 2}px)`;
     this._element.style.height = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
     this._element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
@@ -105,14 +103,21 @@ class Page {
     this._pageElements.forEach((props) => {
       props.element.style.fontSize = `${
         parseFloat(props.originalStyles.fontSize) *
-        this.style.fontSizePercentage
+        this.style.fontSizeMultiplier
       }px`;
 
       props.element.style.lineHeight = `calc(${
         props.originalStyles.lineHeight === "normal"
           ? "1.5em"
           : props.originalStyles.lineHeight
-      } * ${this.style.lineHeightPercentage})`;
+      } * ${this.style.lineHeightMultiplier})`;
+
+      props.element.style.textAlign = this.style.align;
+      props.element.style.fontFamily = this.style.fontFamily;
+      props.element.style.maxWidth = `calc(100vw - ${
+        this.style.margin.side * 2
+      })`;
+      props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top} - ${this.style.margin.bottom})`;
     });
   };
 

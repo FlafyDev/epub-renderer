@@ -60,6 +60,15 @@ export const notifyReady = (innerPage: number, innerPages: number) => {
   callChannel("ready", `${innerPage},${innerPages}`);
 };
 
+export const notifySelection = (selection: string, box: DOMRect) => {
+  callChannel(
+    "selection",
+    `${selection},${Math.floor(box.left)},${Math.floor(box.top)},${Math.floor(
+      box.width
+    )},${Math.floor(box.height)}`
+  );
+};
+
 // TODO use this
 // export const updateLocation = (pageIndex: number, elementSelector: string) => {
 //   callChannel("updateLocation", `${pageIndex},${elementSelector}`);

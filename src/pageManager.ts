@@ -3,6 +3,7 @@ import Page, { StyleProperties } from "./components/page";
 import {
   notifyLoaded,
   notifyReady,
+  notifySelection,
   onCSS,
   onData,
   onPage,
@@ -39,6 +40,8 @@ class PageManager {
     onCSS(this.onCSS.bind(this));
     onData(this.onData.bind(this));
 
+    document.addEventListener("selectionchange", this.onSelection.bind(this));
+
     notifyLoaded();
   }
 
@@ -55,6 +58,17 @@ class PageManager {
 
     Array.from(page.container.getElementsByTagName("link")).forEach(
       (link) => (link.href = modifyPath(link.getAttribute("href")!))
+    );
+  }
+
+  onSelection() {
+    const selection = window.getSelection()?.toString() ?? "";
+
+    notifySelection(
+      selection,
+      selection.length > 0
+        ? window.getSelection()!.getRangeAt(0).getBoundingClientRect()
+        : new DOMRect(0, 0, 0, 0)
     );
   }
 

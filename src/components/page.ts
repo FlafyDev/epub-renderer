@@ -20,7 +20,7 @@ class Page {
     private _innerPage: number,
     html: string,
     private readonly style: StyleProperties,
-    public readonly filePath: string
+    public readonly pageFilePath: string
   ) {
     this._element = document.createElement("div");
     this._element.style.columnWidth = "100vw";
@@ -66,6 +66,10 @@ class Page {
 
   get innerPage() {
     return this._innerPage;
+  }
+
+  set innerPage(value: number) {
+    this._innerPage = value;
   }
 
   private _innerPages = 0;
@@ -121,7 +125,7 @@ class Page {
     });
   };
 
-  private applyStyleShowInnerPage = () => {
+  applyStyleShowInnerPage = () => {
     // The clipPath css property is extremely weird to calculate to show only the current page
     // because it thinks the whole element is just the first page.
     const includeCalc = `${this.innerPage * 100}vw - ${

@@ -46,7 +46,7 @@ class PageManager {
   }
 
   processPage(page: Page) {
-    const pageFilePath = urlJoin(this.baseEPubUrl!, page.filePath, "..");
+    const pageFilePath = urlJoin(this.baseEPubUrl!, page.pageFilePath, "..");
 
     const modifyPath = (resourcePath: string) => {
       return urlJoin(pageFilePath, resourcePath);
@@ -72,14 +72,26 @@ class PageManager {
     );
   }
 
-  async onPage(pageFile: string, innerPage: number) {
-    const html = await (
-      await fetch(urlJoin(this.baseEPubUrl!, pageFile))
-    ).text();
+  async onPage(pageFilePath: string, innerPage: number) {
+    if (this.page?.pageFilePath == pageFilePath) {
+      this.page.innerPage = innerPage;
+      this.page.applyStyleShowInnerPage();
+      this.onPageReady();
+    } else {
+      const html = await (
+        await fetch(urlJoin(this.baseEPubUrl!, pageFilePath))
+      ).text();
 
-    this.page = new Page(this.parent, innerPage, html!, this.style, pageFile);
-    this.processPage(this.page);
-    this.onPageReady();
+      this.page = new Page(
+        this.parent,
+        innerPage,
+        html!,
+        this.style,
+        pageFilePath
+      );
+      this.processPage(this.page);
+      this.onPageReady();
+    }
   }
 
   onStyle(style: StyleProperties) {

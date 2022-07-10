@@ -34,7 +34,7 @@ const callChannel = (name: string, message?: string) => {
 
 // From Flutter app
 export const onPage = (
-  callback: (pageFile: string, innerPage: number) => void
+  callback: (pageFilePath: string, innerPage: number) => void
 ) => {
   (window as any).page = callback;
 };

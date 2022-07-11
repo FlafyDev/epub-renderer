@@ -12,6 +12,9 @@ export interface StyleProperties {
   align: "left" | "center" | "right" | "justify";
   fontFamily: string;
   fontPath: string;
+  fontWeight: string;
+  letterSpacingMultiplier: number;
+  wordSpacingMultiplier: number;
 }
 
 class Page {
@@ -26,7 +29,6 @@ class Page {
     this._element.style.columnWidth = "100vw";
     this._element.style.position = "absolute";
     this._element.style.inset = "0";
-    this._element.style.wordSpacing = "2px";
     this._element.className = "page";
 
     this.container = document.createElement("div");
@@ -76,7 +78,12 @@ class Page {
   private _element: HTMLElement;
   private _pageElements: {
     element: HTMLElement;
-    originalStyles: { fontSize: string; lineHeight: string };
+    originalStyles: {
+      fontSize: string;
+      lineHeight: string;
+      letterSpacing: string;
+      wordSpacing: string;
+    };
   }[] = [];
 
   destroy = () => {
@@ -93,6 +100,8 @@ class Page {
         originalStyles: {
           fontSize: styles.fontSize,
           lineHeight: styles.lineHeight,
+          letterSpacing: styles.letterSpacing,
+          wordSpacing: styles.wordSpacing,
         },
       });
     });
@@ -116,22 +125,39 @@ class Page {
           : props.originalStyles.lineHeight
       } * ${this.style.lineHeightMultiplier})`;
 
+      props.element.style.letterSpacing = `calc(${
+        props.originalStyles.letterSpacing === "normal"
+          ? "0"
+          : props.originalStyles.letterSpacing
+      } * ${this.style.letterSpacingMultiplier})`;
+
+      props.element.style.wordSpacing = `calc(${
+        props.originalStyles.wordSpacing === "normal"
+          ? "2px"
+          : props.originalStyles.wordSpacing
+      } * ${this.style.wordSpacingMultiplier})`;
+
+      props.element.style.fontWeight = this.style.fontWeight;
+
       props.element.style.textAlign = this.style.align;
-      props.element.style.fontFamily = this.style.fontFamily;
-      props.element.style.maxWidth = `calc(100vw - ${
-        this.style.margin.side * 2
-      })`;
-      props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top} - ${this.style.margin.bottom})`;
+      props.element.style.fontFamily = "FONT_NAME";
+
+      if (props.element.tagName === "IMG") {
+        props.element.style.maxWidth = `calc(100vw - ${
+          this.style.margin.side * 2
+        }px)`;
+        props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
+      }
     });
   };
 
   applyStyleShowInnerPage = () => {
     // The clipPath css property is extremely weird to calculate to show only the current page
     // because it thinks the whole element is just the first page.
-    const includeCalc = `${this.innerPage * 100}vw - ${
-      this.style.margin.side
-    }px * ${this.innerPage}`;
-    this._element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
+    // const includeCalc = `${this.innerPage * 100}vw - ${
+    //   this.style.margin.side
+    // }px * ${this.innerPage}`;
+    // this._element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
 
     this._element.style.left = `calc(${this.innerPage * -100}vw + ${
       this.style.margin.side * this.innerPage

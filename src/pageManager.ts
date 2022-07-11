@@ -24,9 +24,12 @@ class PageManager {
     },
     fontSizeMultiplier: 1.125,
     lineHeightMultiplier: 1.2,
+    letterSpacingMultiplier: 1,
+    wordSpacingMultiplier: 1,
     align: "left",
     fontFamily: "Arial",
     fontPath: "",
+    fontWeight: "400",
   };
 
   constructor(public parent: HTMLElement) {
@@ -98,12 +101,10 @@ class PageManager {
     if (style.fontPath.length > 0) {
       this.fontCSSElement.innerHTML = `
       @font-face {
-        font-family: '${style.fontFamily}';
+        font-family: 'FONT_NAME';
         src: url('${urlJoin(this.baseUrl!, style.fontPath)}');
       }
       `;
-
-      console.log(this.fontCSSElement.innerHTML);
     }
 
     this.style = style;

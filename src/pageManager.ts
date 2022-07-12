@@ -76,25 +76,32 @@ class PageManager {
   }
 
   async onPage(pageFilePath: string, innerPage: number) {
-    if (this.page?.pageFilePath == pageFilePath) {
-      this.page.innerPage = innerPage;
-      this.page.applyStyleShowInnerPage();
-      this.onPageReady();
-    } else {
-      const html = await (
-        await fetch(urlJoin(this.baseEPubUrl!, pageFilePath))
-      ).text();
+    // Create a new page only if the current page doesn't meet the requirements
+    if (
+      innerPage != this.page?.innerPage ||
+      pageFilePath != this.page?.pageFilePath
+    ) {
+      if (pageFilePath == this.page?.pageFilePath) {
+        this.page.innerPage = innerPage;
+        this.page.applyStyleShowInnerPage();
+      } else {
+        const html = await (
+          await fetch(urlJoin(this.baseEPubUrl!, pageFilePath))
+        ).text();
 
-      this.page = new Page(
-        this.parent,
-        innerPage,
-        html!,
-        this.style,
-        pageFilePath
-      );
-      this.processPage(this.page);
-      this.onPageReady();
+        this.page?.destroy();
+        this.page = new Page(
+          this.parent,
+          innerPage,
+          html!,
+          this.style,
+          pageFilePath
+        );
+        this.processPage(this.page);
+      }
     }
+
+    this.onPageReady();
   }
 
   onStyle(style: StyleProperties) {

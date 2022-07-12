@@ -21,8 +21,8 @@ class Page {
   constructor(
     public readonly parent: Element,
     private _innerPage: number,
-    html: string,
-    private readonly style: StyleProperties,
+    public readonly initialHtml: string,
+    public readonly style: StyleProperties,
     public readonly pageFilePath: string
   ) {
     this._element = document.createElement("div");
@@ -41,7 +41,7 @@ class Page {
     this.container.appendChild(this._element);
     this.parent.appendChild(this.container);
 
-    this.renderHTML(html);
+    this.renderHTML(initialHtml);
     this.applyStyle();
 
     this._innerPages = calculateInnerPages(
@@ -72,6 +72,11 @@ class Page {
 
   set innerPage(value: number) {
     this._innerPage = value;
+    if (this._innerPage < 0) {
+      this._innerPage = this.innerPages + this._innerPage;
+    }
+
+    this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
   }
 
   private _innerPages = 0;
@@ -154,45 +159,86 @@ class Page {
   applyStyleShowInnerPage = () => {
     // The clipPath css property is extremely weird to calculate to show only the current page
     // because it thinks the whole element is just the first page.
-    // const includeCalc = `${this.innerPage * 100}vw - ${
-    //   this.style.margin.side
-    // }px * ${this.innerPage}`;
-    // this._element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
+    const includeCalc = `${this.innerPage * 100}vw - ${
+      this.style.margin.side
+    }px * ${this.innerPage}`;
+    this._element.style.clipPath = `inset(0 Calc((${includeCalc}) * -1) 0 Calc(${includeCalc})`;
 
     this._element.style.left = `calc(${this.innerPage * -100}vw + ${
       this.style.margin.side * this.innerPage
     }px)`;
   };
 
-  optimize = async () => {
-    await new Promise<void>((resolve) => {
-      let observed = 0;
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          observed++;
+  // optimize = async () => {
+  //   await new Promise<void>((resolve) => {
+  //     let observed = 0;
+  //     const observer = new IntersectionObserver((entries) => {
+  //       entries.forEach((entry) => {
+  //         observed++;
 
-          const element = entry.target as HTMLElement;
-          if (entry.intersectionRatio > 0) {
-            // element.style.display = 'none';
-          } else {
-            element.style.display = "none";
-          }
-        });
-        if (observed >= this._pageElements.length) {
-          observer.disconnect();
-          resolve();
-        }
-      });
+  //         const element = entry.target as HTMLElement;
+  //         console.log(
+  //           `${this.innerPage} | ${observed}: ${entry.intersectionRatio}`
+  //         );
+  //         if (entry.intersectionRatio > 0) {
+  //           // element.style.display = 'none';
+  //         } else {
+  //           element.style.display = "none";
+  //         }
+  //       });
+  //       if (observed >= this._pageElements.length) {
+  //         observer.disconnect();
+  //         resolve();
+  //       }
+  //     });
 
-      this._pageElements.forEach((prop) => {
-        observer.observe(prop.element);
-      });
-    });
+  //     this._pageElements.forEach((prop) => {
+  //       observer.observe(prop.element);
+  //     });
+  //   });
 
-    this._element.style.clipPath = "";
+  //   this._element.style.clipPath = "";
 
-    this._element.style.left = "";
-  };
+  //   this._element.style.left = "";
+  // };
+
+  // optimize2 = () => {
+  //   const rect = new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+
+  //   let log = `${this.pageFilePath} ${this.innerPage} | ${this._pageElements.length}`;
+
+  //   const toRemove: HTMLElement[] = [];
+
+  //   this._pageElements.forEach((prop) => {
+  //     log += "\\nS ----";
+  //     const rect2 = prop.element.getBoundingClientRect();
+
+  //     if (
+  //       !(
+  //         rect.bottom > rect2.top &&
+  //         rect.right > rect2.left &&
+  //         rect.top < rect2.bottom &&
+  //         rect.left < rect2.right
+  //       ) &&
+  //       rect2.width > 0 &&
+  //       rect2.height > 0
+  //     ) {
+  //       toRemove.push(prop.element);
+
+  //       log += `\\nKilled ${prop.element.tagName} ${prop.element.id}`;
+  //     }
+  //   });
+
+  //   log += "\\nDOne!";
+
+  //   console.log(log);
+
+  //   toRemove.forEach((elem) => {
+  //     elem.remove();
+  //   });
+
+  //   this._element.style.left = "";
+  // };
 }
 
 export default Page;

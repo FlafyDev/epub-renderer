@@ -1,221 +1,134 @@
-import Page from "./components/page";
-import PageCreator from "./pageCreator";
-import Transition from "./transitions/transition";
-import lerp from "./utils/lerp";
-
-class MouseControl {
-  public isControlling: boolean = false;
-  public startPosition: number = 0;
-  public position: number = 0;
-}
+import urlJoin from "url-join";
+import Page, { StyleProperties } from "./components/page";
+import {
+  notifyLoaded,
+  notifyReady,
+  notifySelection,
+  onCSS,
+  onData,
+  onPage,
+  onStyle,
+} from "./flutterCom";
 
 class PageManager {
-  transitionProgress: number = 0;
-  targetProgress: number = 0;
-  mouseControl: MouseControl = new MouseControl();
-  previousPage: Page | null = null;
-  nextPage: Page | null = null;
-  transitionPage: Page | null = null;
-  isAnimating: boolean = false;
-  currentPage: Page | null = null;
-  pageCreator: PageCreator;
-  previousTouch: Touch | null = null;
+  page: Page | null = null;
+  baseUrl: string | null = null;
+  baseEPubUrl: string | null = null;
+  additionalCSSElement: HTMLStyleElement;
+  fontCSSElement: HTMLStyleElement;
+  style: StyleProperties = {
+    margin: {
+      side: 28,
+      top: 50,
+      bottom: 20,
+    },
+    fontSizeMultiplier: 1.125,
+    lineHeightMultiplier: 1.2,
+    letterSpacingMultiplier: 1,
+    wordSpacingMultiplier: 1,
+    align: "left",
+    fontFamily: "Arial",
+    fontPath: "",
+    fontWeight: "400",
+  };
 
-  constructor(
-    public parent: HTMLElement,
-    public transition: Transition,
-    initialPage: number
-  ) {
-    // Mouse gestures
-    parent.addEventListener("mousedown", (e) => {
-      this.mouseDown(e.x);
-    });
-    parent.addEventListener("mousemove", (e) => {
-      this.mouseMove(e.x, e.movementX);
-    });
-    parent.addEventListener("mouseup", (e) => this.mouseUp(e.x));
+  constructor(public parent: HTMLElement) {
+    this.additionalCSSElement = document.createElement("style");
+    document.head.appendChild(this.additionalCSSElement);
+    this.fontCSSElement = document.createElement("style");
+    document.head.appendChild(this.fontCSSElement);
 
-    // Touch gestures
-    parent.addEventListener("touchstart", (e) => {
-      const touch = e.touches[0];
-      this.mouseDown(touch.clientX);
-    });
-    parent.addEventListener("touchmove", (e) => {
-      const touch = e.touches[0];
+    onPage(this.onPage.bind(this));
+    onStyle(this.onStyle.bind(this));
+    onCSS(this.onCSS.bind(this));
+    onData(this.onData.bind(this));
 
-      if (this.previousTouch) {
-        const movementX = touch.clientX - this.previousTouch.clientX;
-        this.mouseMove(touch.clientX, movementX);
-      }
+    document.addEventListener("selectionchange", this.onSelection.bind(this));
 
-      this.previousTouch = touch;
-    });
-    parent.addEventListener("touchend", () => {
-      this.mouseUp(this.previousTouch!.clientX);
-    });
+    notifyLoaded();
+  }
 
-    this.pageCreator = new PageCreator(parent);
+  processPage(page: Page) {
+    const pageFilePath = urlJoin(this.baseEPubUrl!, page.pageFilePath, "..");
 
-    const animationFrame: FrameRequestCallback = (time) => {
-      this.updateTransitionAnimation(time);
-      window.requestAnimationFrame(animationFrame);
+    const modifyPath = (resourcePath: string) => {
+      return urlJoin(pageFilePath, resourcePath);
     };
-    window.requestAnimationFrame(animationFrame);
 
-    this.initialize(initialPage);
+    Array.from(page.container.getElementsByTagName("img")).forEach(
+      (image) => (image.src = modifyPath(image.getAttribute("src")!))
+    );
+
+    Array.from(page.container.getElementsByTagName("link")).forEach(
+      (link) => (link.href = modifyPath(link.getAttribute("href")!))
+    );
   }
 
-  private async initialize(initialPage: number) {
-    this.currentPage = await this.pageCreator.createPage(initialPage, 0);
-    this.parent.appendChild(this.currentPage.container);
-    await this.animationDone();
+  onSelection() {
+    const selection = window.getSelection()?.toString() ?? "";
+
+    notifySelection(
+      selection,
+      selection.length > 0
+        ? window.getSelection()!.getRangeAt(0).getBoundingClientRect()
+        : new DOMRect(0, 0, 0, 0)
+    );
   }
 
-  mouseDown = async (position: number) => {
+  async onPage(pageFilePath: string, innerPage: number) {
+    // Create a new page only if the current page doesn't meet the requirements
     if (
-      !this.isAnimating &&
-      this.currentPage &&
-      !this.mouseControl.isControlling &&
-      this.previousPage &&
-      this.nextPage
+      innerPage != this.page?.innerPage ||
+      pageFilePath != this.page?.pageFilePath
     ) {
-      this.mouseControl.isControlling = true;
-      this.mouseControl.startPosition = position;
-
-      this.transitionPage?.destroy();
-      this.transitionPage = this.currentPage;
-
-      this.targetProgress = 0;
-      this.mouseControl.position = position;
-      this.updateTransitionProgress();
-      this.updateTransitionStyle();
-    }
-  };
-
-  mouseMove = (position: number, delta: number) => {
-    if (this.mouseControl.isControlling) {
-      const mouseProgressPercentage = position / window.innerWidth;
-      if (Math.abs(delta) >= 5) {
-        this.targetProgress = delta < 0 ? 1 : -1;
-      } else if (
-        mouseProgressPercentage > 0.3 &&
-        mouseProgressPercentage < 0.7
-      ) {
-        this.targetProgress = 0;
-      }
-
-      this.mouseControl.position = position;
-      this.updateTransitionProgress();
-      this.updateTransitionStyle();
-    }
-  };
-
-  mouseUp = (position: number) => {
-    if (this.mouseControl.isControlling) {
-      this.mouseControl.isControlling = false;
-      this.transitionPage!.container.style.visibility = "hidden";
-      this.isAnimating = true;
-
-      this.mouseControl.position = position;
-      this.updateTransitionProgress();
-      this.updateTransitionStyle();
-    }
-  };
-
-  animationDone = async () => {
-    this.previousPage?.destroy();
-    this.nextPage?.destroy();
-    this.previousPage = await this.pageCreator.createPreviousPage(
-      this.currentPage!
-    );
-    this.nextPage = await this.pageCreator.createNextPage(this.currentPage!);
-  };
-
-  updateTransitionAnimation: FrameRequestCallback = (_) => {
-    if (this.isAnimating) {
-      if (this.targetProgress === 0) {
-        if (
-          this.transitionProgress >= -0.005 &&
-          this.transitionProgress <= 0.005
-        ) {
-          this.isAnimating = false;
-          this.transitionProgress = 0;
-          this.currentPage = this.transitionPage;
-          this.transitionPage = null;
-          this.animationDone();
-        }
-      } else if (
-        this.transitionProgress <= -0.97 ||
-        this.transitionProgress >= 0.97
-      ) {
-        this.isAnimating = false;
-        this.transitionProgress = 0;
-        this.transitionPage?.destroy();
-        this.transitionPage = null;
-
-        if (this.targetProgress === 1) {
-          this.currentPage = this.nextPage;
-          this.nextPage = null;
-        } else {
-          this.currentPage = this.previousPage;
-          this.previousPage = null;
-        }
-        this.animationDone();
-      }
-      this.updateTransitionStyle(
-        this.transitionPage === null &&
-          this.transitionProgress === 0 &&
-          this.targetProgress === 0
-      );
-      this.transitionProgress -= Math.min(
-        this.transitionProgress -
-          lerp(this.transitionProgress, this.targetProgress, 0.2),
-        0.15
-      );
-    }
-  };
-
-  updateTransitionStyle = (back: boolean = false) => {
-    const progress = this.transitionProgress ?? 0;
-
-    const side = this.transitionProgress >= 0 ? 1 : -1;
-
-    let newPage: Page | null = this.currentPage;
-
-    if (this.nextPage === null || this.previousPage === null) {
-      return;
-    }
-
-    if (this.transitionPage) {
-      if (side === 1) {
-        this.previousPage?.container.remove();
-        this.parent.appendChild(this.nextPage!.container);
-        newPage = this.nextPage!;
+      if (pageFilePath == this.page?.pageFilePath) {
+        this.page.innerPage = innerPage;
+        this.page.applyStyleShowInnerPage();
       } else {
-        this.nextPage?.container.remove();
-        this.parent.appendChild(this.previousPage!.container);
-        newPage = this.previousPage!;
+        const html = await (
+          await fetch(urlJoin(this.baseEPubUrl!, pageFilePath))
+        ).text();
+
+        this.page?.destroy();
+        this.page = new Page(
+          this.parent,
+          innerPage,
+          html!,
+          this.style,
+          pageFilePath
+        );
+        this.processPage(this.page);
       }
     }
 
-    // console.log(
-    //   `transitionPage: ${
-    //     (transitionPage ?? this.transitionPage)?.pageIndex
-    //   } --- progress: ${progress}`
-    // );
+    this.onPageReady();
+  }
 
-    this.transition.updateStyle(
-      !this.nextPage || !this.previousPage ? 1 : progress,
-      back ? newPage! : this.transitionPage,
-      back ? null : newPage!
-    );
-  };
+  onStyle(style: StyleProperties) {
+    if (style.fontPath.length > 0) {
+      this.fontCSSElement.innerHTML = `
+      @font-face {
+        font-family: 'FONT_NAME';
+        src: url('${urlJoin(this.baseUrl!, style.fontPath)}');
+      }
+      `;
+    }
 
-  updateTransitionProgress = () => {
-    this.transitionProgress =
-      (this.mouseControl.startPosition - this.mouseControl.position) /
-      this.parent.clientWidth;
-  };
+    this.style = style;
+  }
+
+  onCSS(css: string) {
+    this.additionalCSSElement.innerHTML = css;
+  }
+
+  onData(baseUrl: string) {
+    this.baseUrl = baseUrl;
+    this.baseEPubUrl = urlJoin(baseUrl, "epub");
+  }
+
+  onPageReady() {
+    notifyReady(this.page!.innerPage, this.page!.innerPages);
+  }
 }
 
 export default PageManager;

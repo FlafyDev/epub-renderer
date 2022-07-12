@@ -1,5 +1,7 @@
 // let currentPage = 10;
 
+import { StyleProperties } from "./components/page";
+
 // const methods: { [method: string]: (message: { message: string }) => void } = {
 //   getPages: ({ message }) => {
 //     const pages = message.split(",").map((elem) => parseInt(elem));
@@ -12,17 +14,11 @@
 //     }
 //   },
 //   loaded: (arg) => {
-//     (window as any).setLocation(currentPage, "");
+//     (window as any).page(currentPage, "");
 //   },
-//   nextPage: (arg) => {
-//     (window as any).setLocation(++currentPage, "");
-//   },
-//   previousPage: (arg) => {
-//     (window as any).setLocation(--currentPage, "end");
-//   },
-//   updateLocation: (arg) => {
-//     currentPage = parseInt(arg.message.split(",").at(0)!);
-//   },
+//   ready: (arg) => {
+
+//   }
 // };
 
 // Object.keys(methods).forEach((methodName) => {
@@ -37,39 +33,40 @@ const callChannel = (name: string, message?: string) => {
 };
 
 // From Flutter app
-export const onSetLocation = (
-  callback: (index: number, selector: string) => void
+export const onPage = (
+  callback: (pageFilePath: string, innerPage: number) => void
 ) => {
-  (window as any).setLocation = callback;
+  (window as any).page = callback;
 };
 
-export const onPageData = (callback: (index: number, html: string) => void) => {
-  (window as any).pageData = callback;
+export const onStyle = (callback: (style: StyleProperties) => void) => {
+  (window as any).style = callback;
 };
 
-export const onMoveInnerPage = (callback: (offset: number) => void) => {
-  (window as any).moveInnerPage = callback;
+export const onCSS = (callback: (css: string) => void) => {
+  (window as any).css = callback;
 };
 
-export const onRequestScreenshot = (callback: () => void) => {
-  (window as any).requestScreenshot = callback;
+export const onData = (callback: (baseUrl: string) => void) => {
+  (window as any).data = callback;
 };
 
 // To Flutter app
-export const requestNextPage = () => {
-  callChannel("nextPage");
-};
-
-export const requestPreviousPage = () => {
-  callChannel("previousPage");
-};
-
-export const requestPages = (pages: number[]) => {
-  callChannel("getPages", pages.join(","));
-};
-
 export const notifyLoaded = () => {
   callChannel("loaded");
+};
+
+export const notifyReady = (innerPage: number, innerPages: number) => {
+  callChannel("ready", `${innerPage},${innerPages}`);
+};
+
+export const notifySelection = (selection: string, box: DOMRect) => {
+  callChannel(
+    "selection",
+    `${selection},${Math.floor(box.left)},${Math.floor(box.top)},${Math.floor(
+      box.width
+    )},${Math.floor(box.height)}`
+  );
 };
 
 // TODO use this

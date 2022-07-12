@@ -1,31 +1,34 @@
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 
-interface StyleProperties {
+export interface StyleProperties {
   margin: {
     side: number;
     top: number;
     bottom: number;
   };
-  fontSizePercentage: number;
-  lineHeightPercentage: number;
+  fontSizeMultiplier: number;
+  lineHeightMultiplier: number;
   align: "left" | "center" | "right" | "justify";
   fontFamily: string;
+  fontPath: string;
+  fontWeight: string;
+  letterSpacingMultiplier: number;
+  wordSpacingMultiplier: number;
 }
 
 class Page {
   constructor(
     public readonly parent: Element,
-    public readonly pageIndex: number,
     private _innerPage: number,
-    html: string,
-    private readonly style: StyleProperties
+    public readonly initialHtml: string,
+    public readonly style: StyleProperties,
+    public readonly pageFilePath: string
   ) {
     this._element = document.createElement("div");
     this._element.style.columnWidth = "100vw";
     this._element.style.position = "absolute";
     this._element.style.inset = "0";
-    this._element.style.wordSpacing = "2px";
     this._element.className = "page";
 
     this.container = document.createElement("div");
@@ -38,7 +41,7 @@ class Page {
     this.container.appendChild(this._element);
     this.parent.appendChild(this.container);
 
-    this.renderHTML(html);
+    this.renderHTML(initialHtml);
     this.applyStyle();
 
     this._innerPages = calculateInnerPages(
@@ -46,11 +49,13 @@ class Page {
       this.style.margin.side
     );
 
-    if (this._innerPage === -1) {
-      this._innerPage = this.innerPages - 1;
-    } else {
-      this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
+    console.log(`inner pages: ${this._innerPages}`);
+
+    if (this._innerPage < 0) {
+      this._innerPage = this.innerPages + this._innerPage;
     }
+
+    this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
 
     this.applyStyleShowInnerPage();
   }
@@ -65,11 +70,25 @@ class Page {
     return this._innerPage;
   }
 
+  set innerPage(value: number) {
+    this._innerPage = value;
+    if (this._innerPage < 0) {
+      this._innerPage = this.innerPages + this._innerPage;
+    }
+
+    this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
+  }
+
   private _innerPages = 0;
   private _element: HTMLElement;
   private _pageElements: {
     element: HTMLElement;
-    originalStyles: { fontSize: string; lineHeight: string };
+    originalStyles: {
+      fontSize: string;
+      lineHeight: string;
+      letterSpacing: string;
+      wordSpacing: string;
+    };
   }[] = [];
 
   destroy = () => {
@@ -80,42 +99,64 @@ class Page {
     this._element.innerHTML = `${html}`;
 
     this._element.querySelectorAll("*").forEach((elem) => {
-      // const styles = window.getComputedStyle(elem);
+      const styles = window.getComputedStyle(elem);
       this._pageElements.push({
         element: elem as HTMLElement,
         originalStyles: {
-          fontSize: "",
-          lineHeight: "",
+          fontSize: styles.fontSize,
+          lineHeight: styles.lineHeight,
+          letterSpacing: styles.letterSpacing,
+          wordSpacing: styles.wordSpacing,
         },
       });
     });
   };
 
   private applyStyle = () => {
-    this._element.style.textAlign = this.style.align;
-
-    this._element.style.fontFamily = this.style.fontFamily;
-
     this._element.style.width = `calc(100vw - ${this.style.margin.side * 2}px)`;
-    this._element.style.height = `calc(100vh - ${this.style.margin.top})`;
+    this._element.style.height = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
     this._element.style.margin = `${this.style.margin.top}px ${this.style.margin.side}px ${this.style.margin.bottom}px ${this.style.margin.side}px`;
     this._element.style.columnGap = `${this.style.margin.side}px`;
 
     this._pageElements.forEach((props) => {
       props.element.style.fontSize = `${
         parseFloat(props.originalStyles.fontSize) *
-        this.style.fontSizePercentage
+        this.style.fontSizeMultiplier
       }px`;
 
       props.element.style.lineHeight = `calc(${
         props.originalStyles.lineHeight === "normal"
           ? "1.5em"
           : props.originalStyles.lineHeight
-      } * ${this.style.lineHeightPercentage})`;
+      } * ${this.style.lineHeightMultiplier})`;
+
+      props.element.style.letterSpacing = `calc(${
+        props.originalStyles.letterSpacing === "normal"
+          ? "0"
+          : props.originalStyles.letterSpacing
+      } * ${this.style.letterSpacingMultiplier})`;
+
+      props.element.style.wordSpacing = `calc(${
+        props.originalStyles.wordSpacing === "normal"
+          ? "2px"
+          : props.originalStyles.wordSpacing
+      } * ${this.style.wordSpacingMultiplier})`;
+
+      props.element.style.fontWeight = this.style.fontWeight;
+
+      props.element.style.textAlign = this.style.align;
+      props.element.style.fontFamily = "FONT_NAME";
+
+      if (props.element.tagName === "IMG") {
+        props.element.style.maxWidth = `calc(100vw - ${
+          this.style.margin.side * 2
+        }px)`;
+        props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
+      }
     });
   };
 
-  private applyStyleShowInnerPage = () => {
+  applyStyleShowInnerPage = () => {
     // The clipPath css property is extremely weird to calculate to show only the current page
     // because it thinks the whole element is just the first page.
     const includeCalc = `${this.innerPage * 100}vw - ${
@@ -128,35 +169,76 @@ class Page {
     }px)`;
   };
 
-  optimize = async () => {
-    await new Promise<void>((resolve) => {
-      let observed = 0;
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          observed++;
+  // optimize = async () => {
+  //   await new Promise<void>((resolve) => {
+  //     let observed = 0;
+  //     const observer = new IntersectionObserver((entries) => {
+  //       entries.forEach((entry) => {
+  //         observed++;
 
-          const element = entry.target as HTMLElement;
-          if (entry.intersectionRatio > 0) {
-            // element.style.display = 'none';
-          } else {
-            element.style.display = "none";
-          }
-        });
-        if (observed >= this._pageElements.length) {
-          observer.disconnect();
-          resolve();
-        }
-      });
+  //         const element = entry.target as HTMLElement;
+  //         console.log(
+  //           `${this.innerPage} | ${observed}: ${entry.intersectionRatio}`
+  //         );
+  //         if (entry.intersectionRatio > 0) {
+  //           // element.style.display = 'none';
+  //         } else {
+  //           element.style.display = "none";
+  //         }
+  //       });
+  //       if (observed >= this._pageElements.length) {
+  //         observer.disconnect();
+  //         resolve();
+  //       }
+  //     });
 
-      this._pageElements.forEach((prop) => {
-        observer.observe(prop.element);
-      });
-    });
+  //     this._pageElements.forEach((prop) => {
+  //       observer.observe(prop.element);
+  //     });
+  //   });
 
-    this._element.style.clipPath = "";
+  //   this._element.style.clipPath = "";
 
-    this._element.style.left = "";
-  };
+  //   this._element.style.left = "";
+  // };
+
+  // optimize2 = () => {
+  //   const rect = new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+
+  //   let log = `${this.pageFilePath} ${this.innerPage} | ${this._pageElements.length}`;
+
+  //   const toRemove: HTMLElement[] = [];
+
+  //   this._pageElements.forEach((prop) => {
+  //     log += "\\nS ----";
+  //     const rect2 = prop.element.getBoundingClientRect();
+
+  //     if (
+  //       !(
+  //         rect.bottom > rect2.top &&
+  //         rect.right > rect2.left &&
+  //         rect.top < rect2.bottom &&
+  //         rect.left < rect2.right
+  //       ) &&
+  //       rect2.width > 0 &&
+  //       rect2.height > 0
+  //     ) {
+  //       toRemove.push(prop.element);
+
+  //       log += `\\nKilled ${prop.element.tagName} ${prop.element.id}`;
+  //     }
+  //   });
+
+  //   log += "\\nDOne!";
+
+  //   console.log(log);
+
+  //   toRemove.forEach((elem) => {
+  //     elem.remove();
+  //   });
+
+  //   this._element.style.left = "";
+  // };
 }
 
 export default Page;

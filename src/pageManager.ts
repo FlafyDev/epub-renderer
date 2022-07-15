@@ -1,17 +1,26 @@
 import urlJoin from "url-join";
 import Page, { StyleProperties } from "./components/page";
 import {
+  notifyLink,
   notifyLoaded,
   notifyReady,
   notifySelection,
   onCSS,
   onData,
   onPage,
+  onPageGoAnchor,
   onStyle,
 } from "./flutterCom";
+import InnerLocation, { InnerAnchor } from "./models/innerLocation";
+import { assert } from "./utils/assert";
+
+const isUrlRegex = new RegExp("^(?:[a-z+]+:)?//", "i");
 
 class PageManager {
   page: Page | null = null;
+  pageFilePath: string | null = null;
+  pageInnerLocation: InnerLocation | null = null;
+
   baseUrl: string | null = null;
   baseEPubUrl: string | null = null;
   additionalCSSElement: HTMLStyleElement;
@@ -39,6 +48,7 @@ class PageManager {
     document.head.appendChild(this.fontCSSElement);
 
     onPage(this.onPage.bind(this));
+    onPageGoAnchor(this.onPage.bind(this));
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
     onData(this.onData.bind(this));
@@ -48,20 +58,68 @@ class PageManager {
     notifyLoaded();
   }
 
-  processPage(page: Page) {
-    const pageFilePath = urlJoin(this.baseEPubUrl!, page.pageFilePath, "..");
+  async processPage(page: Page) {
+    const pageFolderPathUrl = urlJoin(
+      this.baseEPubUrl!,
+      this.pageFilePath!,
+      ".."
+    );
 
     const modifyPath = (resourcePath: string) => {
-      return urlJoin(pageFilePath, resourcePath);
+      return urlJoin(pageFolderPathUrl, resourcePath);
     };
 
-    Array.from(page.container.getElementsByTagName("img")).forEach(
-      (image) => (image.src = modifyPath(image.getAttribute("src")!))
-    );
+    const imgs = Array.from(page.container.getElementsByTagName("img"));
+    const links = Array.from(page.container.getElementsByTagName("link"));
 
-    Array.from(page.container.getElementsByTagName("link")).forEach(
-      (link) => (link.href = modifyPath(link.getAttribute("href")!))
-    );
+    await new Promise<void>((resolve) => {
+      const requiresLoading = imgs.length + links.length;
+      const loadedElements: HTMLElement[] = [];
+
+      const timeout = setTimeout(() => {
+        console.error("Timeout after 3 seconds while loading elements");
+        resolve();
+      }, 3000);
+
+      const markLoaded = (element: HTMLElement) => {
+        if (!loadedElements.includes(element)) {
+          loadedElements.push(element);
+
+          if (loadedElements.length == requiresLoading) {
+            clearTimeout(timeout);
+            resolve();
+          }
+        }
+        console.log(`Loaded: ${loadedElements.length}/${requiresLoading}`);
+      };
+
+      imgs.forEach((image) => {
+        image.src = modifyPath(image.getAttribute("src")!);
+        image.addEventListener("load", () => markLoaded(image));
+        // image.addEventListener("error", () => markLoaded(image));
+      });
+
+      // Mainly for css
+      links.forEach((link) => {
+        link.href = modifyPath(link.getAttribute("href")!);
+        link.addEventListener("load", () => markLoaded(link));
+        // link.addEventListener("error", () => markLoaded(link));
+      });
+    });
+
+    Array.from(page.container.getElementsByTagName("a")).forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const href = a.getAttribute("href");
+        if (href) {
+          notifyLink(
+            isUrlRegex.test(href)
+              ? href
+              : urlJoin(this.pageFilePath!, "..", href)
+          );
+        }
+      });
+    });
   }
 
   onSelection() {
@@ -75,30 +133,31 @@ class PageManager {
     );
   }
 
-  async onPage(pageFilePath: string, innerPage: number) {
-    // Create a new page only if the current page doesn't meet the requirements
+  async onPage(pageFilePath: string, innerLocation: InnerLocation) {
+    // Do nothing if the page is already loaded
     if (
-      innerPage != this.page?.innerPage ||
-      pageFilePath != this.page?.pageFilePath
+      innerLocation.value != this.pageInnerLocation?.value ||
+      pageFilePath != this.pageFilePath
     ) {
-      if (pageFilePath == this.page?.pageFilePath) {
-        this.page.innerPage = innerPage;
-        this.page.applyStyleShowInnerPage();
-      } else {
+      if (pageFilePath != this.pageFilePath) {
+        // Recreate the page if the html is different
         const html = await (
           await fetch(urlJoin(this.baseEPubUrl!, pageFilePath))
         ).text();
 
         this.page?.destroy();
-        this.page = new Page(
-          this.parent,
-          innerPage,
-          html!,
-          this.style,
-          pageFilePath
-        );
-        this.processPage(this.page);
+        this.pageFilePath = pageFilePath;
+        this.page = new Page(this.parent, html!, this.style);
+        await this.processPage(this.page);
+        this.page.initialize();
       }
+
+      assert(this.page != null, "Page should not be null");
+
+      this.pageInnerLocation = innerLocation;
+      this.page.innerPage =
+        this.page.getInnerPageFromInnerLocation(innerLocation);
+      this.page.applyStyleShowInnerPage();
     }
 
     this.onPageReady();

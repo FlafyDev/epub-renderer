@@ -1,31 +1,5 @@
-// let currentPage = 10;
-
 import { StyleProperties } from "./components/page";
-
-// const methods: { [method: string]: (message: { message: string }) => void } = {
-//   getPages: ({ message }) => {
-//     const pages = message.split(",").map((elem) => parseInt(elem));
-//     for (let i = 0; i < pages.length; i++) {
-//       let content = "";
-//       for (let j = 0; j < 1000 + pages[i]; j++) {
-//         content += `<div>Page ${pages[i]} --------------------------------------- ${j}</div>`;
-//       }
-//       (window as any).pageData(pages[i], content);
-//     }
-//   },
-//   loaded: (arg) => {
-//     (window as any).page(currentPage, "");
-//   },
-//   ready: (arg) => {
-
-//   }
-// };
-
-// Object.keys(methods).forEach((methodName) => {
-//   (window as any)[methodName] = {
-//     postMessage: (message: string) => methods[methodName]({ message: message }),
-//   };
-// });
+import { InnerAnchor, InnerPage } from "./models/innerLocation";
 
 const callChannel = (name: string, message?: string) => {
   // console.log(`${name}: "${message}"`);
@@ -34,9 +8,17 @@ const callChannel = (name: string, message?: string) => {
 
 // From Flutter app
 export const onPage = (
-  callback: (pageFilePath: string, innerPage: number) => void
+  callback: (pageFilePath: string, innerPage: InnerPage) => void
 ) => {
-  (window as any).page = callback;
+  (window as any).page = (pageFilePath: string, innerPage?: number) =>
+    callback(pageFilePath, new InnerPage(innerPage ?? 0));
+};
+
+export const onPageGoAnchor = (
+  callback: (pageFilePath: string, innerAnchor: InnerAnchor) => void
+) => {
+  (window as any).pageGoAnchor = (pageFilePath: string, innerAnchor: string) =>
+    callback(pageFilePath, new InnerAnchor(innerAnchor));
 };
 
 export const onStyle = (callback: (style: StyleProperties) => void) => {
@@ -69,7 +51,6 @@ export const notifySelection = (selection: string, box: DOMRect) => {
   );
 };
 
-// TODO use this
-// export const updateLocation = (pageIndex: number, elementSelector: string) => {
-//   callChannel("updateLocation", `${pageIndex},${elementSelector}`);
-// };
+export const notifyLink = (link: string) => {
+  callChannel("link", link);
+};

@@ -1,3 +1,4 @@
+import InnerLocation, { InnerAnchor, InnerPage } from "../models/innerLocation";
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 
@@ -20,10 +21,8 @@ export interface StyleProperties {
 class Page {
   constructor(
     public readonly parent: Element,
-    private _innerPage: number,
     public readonly initialHtml: string,
-    public readonly style: StyleProperties,
-    public readonly pageFilePath: string
+    public readonly style: StyleProperties
   ) {
     this._element = document.createElement("div");
     this._element.style.columnWidth = "100vw";
@@ -43,24 +42,10 @@ class Page {
 
     this.renderHTML(initialHtml);
     this.applyStyle();
-
-    this._innerPages = calculateInnerPages(
-      this._element,
-      this.style.margin.side
-    );
-
-    console.log(`inner pages: ${this._innerPages}`);
-
-    if (this._innerPage < 0) {
-      this._innerPage = this.innerPages + this._innerPage;
-    }
-
-    this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
-
-    this.applyStyleShowInnerPage();
   }
 
   public container: HTMLElement;
+  private _innerPage: number = 0;
 
   get innerPages() {
     return this._innerPages;
@@ -90,6 +75,36 @@ class Page {
       wordSpacing: string;
     };
   }[] = [];
+
+  initialize = () => {
+    this._innerPages = calculateInnerPages(
+      this._element,
+      this.style.margin.side
+    );
+
+    console.log(`inner pages: ${this._innerPages}`);
+  };
+
+  getInnerPageFromInnerLocation = (innerLocation?: InnerLocation) => {
+    if (innerLocation instanceof InnerPage) {
+      return innerLocation.value;
+    } else if (innerLocation instanceof InnerAnchor) {
+      const anchorElement = this._element.querySelector(
+        `#${innerLocation.value}`
+      );
+
+      if (!anchorElement) {
+        return 0;
+      }
+
+      return Math.floor(
+        anchorElement.getBoundingClientRect().left /
+          (this._element.scrollWidth / this.innerPages)
+      );
+    } else {
+      return 0;
+    }
+  };
 
   destroy = () => {
     this.container.remove();
@@ -168,77 +183,6 @@ class Page {
       this.style.margin.side * this.innerPage
     }px)`;
   };
-
-  // optimize = async () => {
-  //   await new Promise<void>((resolve) => {
-  //     let observed = 0;
-  //     const observer = new IntersectionObserver((entries) => {
-  //       entries.forEach((entry) => {
-  //         observed++;
-
-  //         const element = entry.target as HTMLElement;
-  //         console.log(
-  //           `${this.innerPage} | ${observed}: ${entry.intersectionRatio}`
-  //         );
-  //         if (entry.intersectionRatio > 0) {
-  //           // element.style.display = 'none';
-  //         } else {
-  //           element.style.display = "none";
-  //         }
-  //       });
-  //       if (observed >= this._pageElements.length) {
-  //         observer.disconnect();
-  //         resolve();
-  //       }
-  //     });
-
-  //     this._pageElements.forEach((prop) => {
-  //       observer.observe(prop.element);
-  //     });
-  //   });
-
-  //   this._element.style.clipPath = "";
-
-  //   this._element.style.left = "";
-  // };
-
-  // optimize2 = () => {
-  //   const rect = new DOMRect(0, 0, window.innerWidth, window.innerHeight);
-
-  //   let log = `${this.pageFilePath} ${this.innerPage} | ${this._pageElements.length}`;
-
-  //   const toRemove: HTMLElement[] = [];
-
-  //   this._pageElements.forEach((prop) => {
-  //     log += "\\nS ----";
-  //     const rect2 = prop.element.getBoundingClientRect();
-
-  //     if (
-  //       !(
-  //         rect.bottom > rect2.top &&
-  //         rect.right > rect2.left &&
-  //         rect.top < rect2.bottom &&
-  //         rect.left < rect2.right
-  //       ) &&
-  //       rect2.width > 0 &&
-  //       rect2.height > 0
-  //     ) {
-  //       toRemove.push(prop.element);
-
-  //       log += `\\nKilled ${prop.element.tagName} ${prop.element.id}`;
-  //     }
-  //   });
-
-  //   log += "\\nDOne!";
-
-  //   console.log(log);
-
-  //   toRemove.forEach((elem) => {
-  //     elem.remove();
-  //   });
-
-  //   this._element.style.left = "";
-  // };
 }
 
 export default Page;

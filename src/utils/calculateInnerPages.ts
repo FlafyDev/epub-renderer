@@ -3,7 +3,7 @@ const calculateInnerPages = (element: HTMLElement, side: number) => {
   const entireWidth = element.scrollWidth;
   const styles = window.getComputedStyle(element);
   const columnWidth = parseFloat(styles.columnWidth);
-  const columnGap = parseFloat(styles.columnGap);
+  const columnGap = parseFloat(styles.columnGap) || 0;
 
   const innerPages =
     (entireWidth + columnGap) / (columnWidth + columnGap - side * 2);

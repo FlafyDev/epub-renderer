@@ -11,7 +11,7 @@ import {
   onPageGoAnchor,
   onStyle,
 } from "./flutterCom";
-import InnerLocation, { InnerAnchor } from "./models/innerLocation";
+import InnerLocation from "./models/innerLocation";
 import { assert } from "./utils/assert";
 
 const isUrlRegex = new RegExp("^(?:[a-z+]+:)?//", "i");

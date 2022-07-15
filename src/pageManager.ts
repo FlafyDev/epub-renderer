@@ -10,7 +10,7 @@ import {
   onPage,
   onPageGoAnchor,
   onStyle,
-} from "./flutterCom";
+} from "./controllerCom";
 import InnerLocation from "./models/innerLocation";
 import { assert } from "./utils/assert";
 

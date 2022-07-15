@@ -6,7 +6,7 @@ const callChannel = (name: string, message?: string) => {
   return (window as any)[name].postMessage(message) as void;
 };
 
-// From Flutter app
+// From Controller
 export const onPage = (
   callback: (pageFilePath: string, innerPage: InnerPage) => void
 ) => {
@@ -33,7 +33,7 @@ export const onData = (callback: (baseUrl: string) => void) => {
   (window as any).data = callback;
 };
 
-// To Flutter app
+// To Controller
 export const notifyLoaded = () => {
   callChannel("loaded");
 };

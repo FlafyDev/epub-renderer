@@ -41,7 +41,6 @@ class Page {
     this.parent.appendChild(this.container);
 
     this.renderHTML(initialHtml);
-    this.applyStyle();
   }
 
   public container: HTMLElement;
@@ -77,6 +76,21 @@ class Page {
   }[] = [];
 
   initialize = () => {
+    this._element.querySelectorAll("*").forEach((elem) => {
+      const styles = window.getComputedStyle(elem);
+      this._pageElements.push({
+        element: elem as HTMLElement,
+        originalStyles: {
+          fontSize: styles.fontSize,
+          lineHeight: styles.lineHeight,
+          letterSpacing: styles.letterSpacing,
+          wordSpacing: styles.wordSpacing,
+        },
+      });
+    });
+
+    this.applyStyle();
+
     this._innerPages = calculateInnerPages(
       this._element,
       this.style.margin.side
@@ -112,19 +126,6 @@ class Page {
 
   private renderHTML = (html: string) => {
     this._element.innerHTML = `${html}`;
-
-    this._element.querySelectorAll("*").forEach((elem) => {
-      const styles = window.getComputedStyle(elem);
-      this._pageElements.push({
-        element: elem as HTMLElement,
-        originalStyles: {
-          fontSize: styles.fontSize,
-          lineHeight: styles.lineHeight,
-          letterSpacing: styles.letterSpacing,
-          wordSpacing: styles.wordSpacing,
-        },
-      });
-    });
   };
 
   private applyStyle = () => {

@@ -9,10 +9,12 @@ import {
   onData,
   onPage,
   onPageGoAnchor,
+  onClearSelection,
   onStyle,
 } from "./controllerCom";
 import InnerLocation from "./models/innerLocation";
 import { assert } from "./utils/assert";
+import clearSelection from "./utils/clearSelection";
 
 const isUrlRegex = new RegExp("^(?:[a-z+]+:)?//", "i");
 
@@ -52,6 +54,7 @@ class PageManager {
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
     onData(this.onData.bind(this));
+    onClearSelection(this.onClearSelection.bind(this));
 
     document.addEventListener("selectionchange", this.onSelection.bind(this));
 
@@ -171,6 +174,7 @@ class PageManager {
         src: url('${urlJoin(this.baseUrl!, style.fontPath)}');
       }
       `;
+      ``;
     }
 
     this.style = style;
@@ -187,6 +191,10 @@ class PageManager {
 
   onPageReady() {
     notifyReady(this.page!.innerPage, this.page!.innerPages);
+  }
+
+  onClearSelection() {
+    clearSelection();
   }
 }
 

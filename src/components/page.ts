@@ -72,6 +72,7 @@ class Page {
       lineHeight: string;
       letterSpacing: string;
       wordSpacing: string;
+      textAlign: string;
     };
   }[] = [];
 
@@ -85,6 +86,7 @@ class Page {
           lineHeight: styles.lineHeight,
           letterSpacing: styles.letterSpacing,
           wordSpacing: styles.wordSpacing,
+          textAlign: styles.textAlign,
         },
       });
     });
@@ -103,18 +105,22 @@ class Page {
     if (innerLocation instanceof InnerPage) {
       return innerLocation.value;
     } else if (innerLocation instanceof InnerAnchor) {
-      const anchorElement = this._element.querySelector(
-        `#${innerLocation.value}`
-      );
+      try {
+        const anchorElement = this._element.querySelector(
+          `#${innerLocation.value}`
+        );
 
-      if (!anchorElement) {
+        if (!anchorElement) {
+          return 0;
+        }
+
+        return Math.floor(
+          anchorElement.getBoundingClientRect().left /
+            (this._element.scrollWidth / this.innerPages)
+        );
+      } catch {
         return 0;
       }
-
-      return Math.floor(
-        anchorElement.getBoundingClientRect().left /
-          (this._element.scrollWidth / this.innerPages)
-      );
     } else {
       return 0;
     }
@@ -160,7 +166,10 @@ class Page {
 
       props.element.style.fontWeight = this.style.fontWeight;
 
-      props.element.style.textAlign = this.style.align;
+      if (props.originalStyles.textAlign !== "center") {
+        props.element.style.textAlign = this.style.align;
+      }
+
       props.element.style.fontFamily = "FONT_NAME";
 
       if (props.element.tagName === "IMG") {

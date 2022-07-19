@@ -18,6 +18,8 @@ You must have access to the `window` object to controller the renderer.
 
 `window.css(css: string)` - Custom css to add to what will be rendered.
 
+`window.clearSelection()` - Clear the selected text.
+
 ### Channels
 
 Channels are ways for the renderer to communicate with whatever controls it.

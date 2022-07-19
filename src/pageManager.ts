@@ -2,7 +2,7 @@ import urlJoin from "url-join";
 import Page, { StyleProperties } from "./components/page";
 import {
   notifyLink,
-  notifyLoaded,
+  notifyLoad,
   notifyReady,
   notifySelection,
   onCSS,
@@ -13,6 +13,7 @@ import {
   onStyle,
 } from "./controllerCom";
 import InnerLocation from "./models/innerLocation";
+import QuickSelection from "./quickSelection";
 import { assert } from "./utils/assert";
 import clearSelection from "./utils/clearSelection";
 
@@ -23,6 +24,7 @@ class PageManager {
   pageFilePath: string | null = null;
   pageInnerLocation: InnerLocation | null = null;
 
+  quickSelection = new QuickSelection();
   baseUrl: string | null = null;
   baseEPubUrl: string | null = null;
   additionalCSSElement: HTMLStyleElement;
@@ -57,8 +59,9 @@ class PageManager {
     onClearSelection(this.onClearSelection.bind(this));
 
     document.addEventListener("selectionchange", this.onSelection.bind(this));
+    this.quickSelection.toggle(true);
 
-    notifyLoaded();
+    notifyLoad();
   }
 
   async processPage(page: Page) {

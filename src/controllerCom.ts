@@ -1,9 +1,9 @@
 import { StyleProperties } from "./components/page";
 import { InnerAnchor, InnerPage } from "./models/innerLocation";
 
-const callChannel = (name: string, message?: string) => {
+const callHandler = (name: string, ...args: any[]) => {
   // console.log(`${name}: "${message}"`);
-  return (window as any)[name].postMessage(message) as void;
+  return (window as any).flutter_inappwebview.callHandler(name, ...args);
 };
 
 // From Controller
@@ -38,23 +38,25 @@ export const onClearSelection = (callback: () => void) => {
 };
 
 // To Controller
-export const notifyLoaded = () => {
-  callChannel("loaded");
+export const notifyLoad = () => {
+  callHandler("load");
 };
 
 export const notifyReady = (innerPage: number, innerPages: number) => {
-  callChannel("ready", `${innerPage},${innerPages}`);
+  callHandler("ready", innerPage, innerPages);
 };
 
 export const notifySelection = (selection: string, box: DOMRect) => {
-  callChannel(
+  callHandler(
     "selection",
-    `${selection},${Math.floor(box.left)},${Math.floor(box.top)},${Math.floor(
-      box.width
-    )},${Math.floor(box.height)}`
+    selection,
+    Math.floor(box.left),
+    Math.floor(box.top),
+    Math.floor(box.width),
+    Math.floor(box.height)
   );
 };
 
 export const notifyLink = (link: string) => {
-  callChannel("link", link);
+  callHandler("link", link);
 };

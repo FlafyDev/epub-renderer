@@ -20,25 +20,29 @@ You must have access to the `window` object to controller the renderer.
 
 `window.clearSelection()` - Clear the selected text.
 
-### Channels
+### Handlers
 
-Channels are ways for the renderer to communicate with whatever controls it.
+Handlers are ways for the renderer to communicate with whatever controls it.
 
-This is how Channels are sent:
+This is how Handlers are sent:
 
 ```js
-window[channelName].postMessage(message);
+window.flutter_inappwebview.callHandler(name, ...args);
 ```
 
-where `message` is `string | undefined`
+where `args` is `any[]`
 
-#### List of Channels:
+#### List of Handlers:
 
-- `loaded` - everything has been loaded and can now be controlled.
+- `load` - everything has been loaded and can now be controlled.
 - `ready` - when a page is loaded either with `window.page` or `window.pageGoAnchor`.  
-  `` message = `${innerPage},${innerPages}`  ``
+  `args = [innerPage: int, innerPages: int]`
+
 - `link` - when pressing on any link.
-  `message = link`
+  `args = [link: String]`
+
+- `selection` - when text is being highlighted.
+  `args = [text: String, left: int, top: int, width: int, height: int]`
 
 ### Providing files with a server
 

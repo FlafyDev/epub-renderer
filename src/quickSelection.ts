@@ -17,6 +17,7 @@ class QuickSelection {
 
   _onClick = () => {
     try {
+      // https://stackoverflow.com/a/41345185/10849036
       const selection = window.getSelection();
       if (!selection || selection.rangeCount != 1) return;
       const range = selection.getRangeAt(0);
@@ -51,7 +52,9 @@ class QuickSelection {
       if (!range.toString().match(word_regexp)) {
         range.setEnd(node, range.endOffset - 1);
       }
-    } catch {}
+    } catch (e) {
+      console.error(`QuickSelection: ${e}`);
+    }
   };
 }
 

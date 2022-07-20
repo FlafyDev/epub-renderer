@@ -36,7 +36,7 @@ where `args` is `any[]`
 
 - `load` - everything has been loaded and can now be controlled.
 - `ready` - when a page is loaded either with `window.page` or `window.pageGoAnchor`.  
-  `args = [innerPage: int, innerPages: int]`
+  `args = [innerPage: int, innerPages: int, passedAnchors: string[]]`
 
 - `link` - when pressing on any link.
   `args = [link: String]`

@@ -177,7 +177,6 @@ class PageManager {
         src: url('${urlJoin(this.baseUrl!, style.fontPath)}');
       }
       `;
-      ``;
     }
 
     this.style = style;
@@ -193,7 +192,11 @@ class PageManager {
   }
 
   onPageReady() {
-    notifyReady(this.page!.innerPage, this.page!.innerPages);
+    notifyReady(
+      this.page!.innerPage,
+      this.page!.innerPages,
+      this.page!.passedAnchors
+    );
   }
 
   onClearSelection() {

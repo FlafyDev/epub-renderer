@@ -42,8 +42,12 @@ export const notifyLoad = () => {
   callHandler("load");
 };
 
-export const notifyReady = (innerPage: number, innerPages: number) => {
-  callHandler("ready", innerPage, innerPages);
+export const notifyReady = (
+  innerPage: number,
+  innerPages: number,
+  passedAnchors: String[]
+) => {
+  callHandler("ready", innerPage, innerPages, passedAnchors);
 };
 
 export const notifySelection = (selection: string, box: DOMRect) => {

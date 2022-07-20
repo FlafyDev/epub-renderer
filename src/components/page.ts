@@ -41,10 +41,13 @@ class Page {
     this.parent.appendChild(this.container);
 
     this.renderHTML(initialHtml);
+    this._allAnchors = Array.from(document.querySelectorAll("[id]"));
   }
 
+  public passedAnchors: string[] = [];
   public container: HTMLElement;
   private _innerPage: number = 0;
+  private _allAnchors;
 
   get innerPages() {
     return this._innerPages;
@@ -61,6 +64,16 @@ class Page {
     }
 
     this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
+
+    this.passedAnchors = this._allAnchors
+      .filter(
+        (anchor) =>
+          Math.floor(
+            anchor.getBoundingClientRect().left /
+              (this._element.scrollWidth / this.innerPages)
+          ) < this._innerPage
+      )
+      .map((anchor) => anchor.id);
   }
 
   private _innerPages = 0;

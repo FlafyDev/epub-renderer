@@ -118,7 +118,7 @@ class Page {
         }
 
         return Math.floor(
-          anchorElement.getBoundingClientRect().left /
+          this._getElementLeft(anchorElement) /
             (this._element.scrollWidth / this.innerPages)
         );
       } catch {
@@ -200,11 +200,18 @@ class Page {
       .filter(
         (anchor) =>
           Math.floor(
-            anchor.getBoundingClientRect().left /
+            this._getElementLeft(anchor) /
               (this._element.scrollWidth / this.innerPages)
           ) <= this._innerPage
       )
       .map((anchor) => anchor.id);
+  };
+
+  _getElementLeft = (element: Element) => {
+    return (
+      element.getBoundingClientRect().left -
+      Number(window.getComputedStyle(this._element).left.replace("px", ""))
+    );
   };
 }
 

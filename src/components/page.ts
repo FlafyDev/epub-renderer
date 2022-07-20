@@ -64,16 +64,6 @@ class Page {
     }
 
     this._innerPage = clamp(this._innerPage, 0, this.innerPages - 1);
-
-    this.passedAnchors = this._allAnchors
-      .filter(
-        (anchor) =>
-          Math.floor(
-            anchor.getBoundingClientRect().left /
-              (this._element.scrollWidth / this.innerPages)
-          ) < this._innerPage
-      )
-      .map((anchor) => anchor.id);
   }
 
   private _innerPages = 0;
@@ -205,6 +195,16 @@ class Page {
     this._element.style.left = `calc(${this.innerPage * -100}vw + ${
       this.style.margin.side * this.innerPage
     }px)`;
+
+    this.passedAnchors = this._allAnchors
+      .filter(
+        (anchor) =>
+          Math.floor(
+            anchor.getBoundingClientRect().left /
+              (this._element.scrollWidth / this.innerPages)
+          ) <= this._innerPage
+      )
+      .map((anchor) => anchor.id);
   };
 }
 

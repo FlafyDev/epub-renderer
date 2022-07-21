@@ -23,6 +23,9 @@ class PageManager {
   page: Page | null = null;
   pageFilePath: string | null = null;
   pageInnerLocation: InnerLocation | null = null;
+  queuedPage: { pageFilePath: string; innerLocation: InnerLocation } | null =
+    null;
+  makingPage: boolean = false;
 
   quickSelection = new QuickSelection();
   baseUrl: string | null = null;
@@ -140,6 +143,12 @@ class PageManager {
   }
 
   async onPage(pageFilePath: string, innerLocation: InnerLocation) {
+    if (this.makingPage) {
+      this.queuedPage = { pageFilePath, innerLocation };
+      return;
+    }
+    this.makingPage = true;
+
     // Do nothing if the page is already loaded
     if (
       innerLocation.value != this.pageInnerLocation?.value ||
@@ -166,7 +175,12 @@ class PageManager {
       this.page.applyStyleShowInnerPage();
     }
 
-    this.onPageReady();
+    this.makingPage = false;
+    if (this.queuedPage) {
+      this.onPage(this.queuedPage.pageFilePath, this.queuedPage.innerLocation);
+    } else {
+      this.onPageReady();
+    }
   }
 
   onStyle(style: StyleProperties) {

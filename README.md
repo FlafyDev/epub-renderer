@@ -4,6 +4,8 @@ An EPUB Renderer for my [Book Reader](https://github.com/FlafyDev/epub-reader).
 
 ## Usage
 
+###### Outdated. I change stuff to quickly so it's not worth to document it for now.
+
 ### Controlling
 
 You must have access to the `window` object to controller the renderer.

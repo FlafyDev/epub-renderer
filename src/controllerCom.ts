@@ -29,10 +29,6 @@ export const onCSS = (callback: (css: string) => void) => {
   (window as any).css = callback;
 };
 
-export const onData = (callback: (baseUrl: string) => void) => {
-  (window as any).data = callback;
-};
-
 export const onClearSelection = (callback: () => void) => {
   (window as any).clearSelection = callback;
 };

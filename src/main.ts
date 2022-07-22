@@ -11,4 +11,16 @@ window.oncontextmenu = function (event) {
   return false;
 };
 
-new PageManager(app);
+// Wait for window.flutter_inappwebview to be defined as a function.
+(async () => {
+  await new Promise<void>(async (resolve) => {
+    while (
+      typeof (window as any).flutter_inappwebview?.callHandler !== "function"
+    ) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 100));
+    }
+    resolve();
+  });
+
+  new PageManager(app);
+})();

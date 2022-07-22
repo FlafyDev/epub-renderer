@@ -1,12 +1,9 @@
-import urlJoin from "url-join";
 import Page, { StyleProperties } from "./components/page";
 import {
-  notifyLink,
   notifyLoad,
   notifyReady,
   notifySelection,
   onCSS,
-  onData,
   onPage,
   onPageGoAnchor,
   onClearSelection,
@@ -17,8 +14,6 @@ import QuickSelection from "./quickSelection";
 import { assert } from "./utils/assert";
 import clearSelection from "./utils/clearSelection";
 
-const isUrlRegex = new RegExp("^(?:[a-z+]+:)?//", "i");
-
 class PageManager {
   page: Page | null = null;
   pageFilePath: string | null = null;
@@ -28,8 +23,6 @@ class PageManager {
   makingPage: boolean = false;
 
   quickSelection = new QuickSelection();
-  baseUrl: string | null = null;
-  baseEPubUrl: string | null = null;
   additionalCSSElement: HTMLStyleElement;
   fontCSSElement: HTMLStyleElement;
   style: StyleProperties = {
@@ -58,7 +51,6 @@ class PageManager {
     onPageGoAnchor(this.onPage.bind(this));
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
-    onData(this.onData.bind(this));
     onClearSelection(this.onClearSelection.bind(this));
 
     document.addEventListener("selectionchange", this.onSelection.bind(this));
@@ -68,66 +60,28 @@ class PageManager {
   }
 
   async processPage(page: Page) {
-    const pageFolderPathUrl = urlJoin(
-      this.baseEPubUrl!,
-      this.pageFilePath!,
-      ".."
-    );
-
-    const modifyPath = (resourcePath: string) => {
-      return urlJoin(pageFolderPathUrl, resourcePath);
-    };
-
-    const imgs = Array.from(page.container.getElementsByTagName("img"));
-    const links = Array.from(page.container.getElementsByTagName("link"));
-
-    await new Promise<void>((resolve) => {
-      const requiresLoading = imgs.length + links.length;
-      const loadedElements: HTMLElement[] = [];
-
-      const timeout = setTimeout(() => {
-        console.error("Timeout after 3 seconds while loading elements");
-        resolve();
-      }, 3000);
-
-      const markLoaded = (element: HTMLElement) => {
-        if (!loadedElements.includes(element)) {
-          loadedElements.push(element);
-
-          if (loadedElements.length == requiresLoading) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        }
-        console.log(`Loaded: ${loadedElements.length}/${requiresLoading}`);
-      };
-
-      imgs.forEach((image) => {
-        image.src = modifyPath(image.getAttribute("src")!);
-        image.addEventListener("load", () => markLoaded(image));
-        // image.addEventListener("error", () => markLoaded(image));
-      });
-
-      // Mainly for css
-      links.forEach((link) => {
-        link.href = modifyPath(link.getAttribute("href")!);
-        link.addEventListener("load", () => markLoaded(link));
-        // link.addEventListener("error", () => markLoaded(link));
-      });
+    await Promise.all(
+      Array.from(page.container.querySelectorAll("link")).map(
+        (link) =>
+          new Promise((resolve) => {
+            link.onload = link.onerror = resolve;
+          })
+      )
+    ).then(() => {
+      console.log("links finished loading");
     });
 
-    Array.from(page.container.getElementsByTagName("a")).forEach((a) => {
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        const href = a.getAttribute("href");
-        if (href) {
-          notifyLink(
-            isUrlRegex.test(href)
-              ? href
-              : urlJoin(this.pageFilePath!, "..", href)
-          );
-        }
-      });
+    await Promise.all(
+      Array.from(page.container.querySelectorAll("img"))
+        .filter((img) => !img.complete)
+        .map(
+          (img) =>
+            new Promise((resolve) => {
+              img.onload = img.onerror = resolve;
+            })
+        )
+    ).then(() => {
+      console.log("images finished loading");
     });
   }
 
@@ -149,16 +103,13 @@ class PageManager {
     }
     this.makingPage = true;
 
-    // Do nothing if the page is already loaded
     if (
       innerLocation.value != this.pageInnerLocation?.value ||
       pageFilePath != this.pageFilePath
     ) {
       if (pageFilePath != this.pageFilePath) {
         // Recreate the page if the html is different
-        const html = await (
-          await fetch(urlJoin(this.baseEPubUrl!, pageFilePath))
-        ).text();
+        const html = await (await fetch(pageFilePath)).text();
 
         this.page?.destroy();
         this.pageFilePath = pageFilePath;
@@ -188,7 +139,7 @@ class PageManager {
       this.fontCSSElement.innerHTML = `
       @font-face {
         font-family: 'FONT_NAME';
-        src: url('${urlJoin(this.baseUrl!, style.fontPath)}');
+        src: url('${style.fontPath}');
       }
       `;
     }
@@ -198,11 +149,6 @@ class PageManager {
 
   onCSS(css: string) {
     this.additionalCSSElement.innerHTML = css;
-  }
-
-  onData(baseUrl: string) {
-    this.baseUrl = baseUrl;
-    this.baseEPubUrl = urlJoin(baseUrl, "epub");
   }
 
   onPageReady() {

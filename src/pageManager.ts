@@ -163,7 +163,7 @@ class PageManager {
     }
 
     this.style = style;
-    this.page!.unsafelySetStyle(style);
+    this.page?.unsafelySetStyle(style);
   }
 
   onCSS(css: string) {

@@ -181,7 +181,11 @@ class Page {
         props.element.style.textAlign = this.style.align;
       }
 
-      props.element.style.fontFamily = this.style.fontFamily;
+      if (this.style.fontFamily.length > 0) {
+        props.element.style.fontFamily = this.style.fontFamily;
+      } else {
+        props.element.style.fontFamily = "";
+      }
 
       // if (props.element.tagName === "IMG") {
       //   props.element.style.maxWidth = `calc(100vw - ${

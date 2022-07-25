@@ -17,15 +17,21 @@ image {
   max-height: 100%;
 }
 
-a:link {
+a:link,
+a:visited {
   color: #2c8dc2 !important;
 }
 
-/* @font-face {
-  font-family: "Literata";
-  src: url("./fonts/Literata-VariableFont_opsz,wght.ttf");
-} */
-
 * {
   word-wrap: break-word !important;
+}
+
+@font-face {
+  font-family: "Literata";
+  src: url("/_fonts/variable/Literata.ttf");
+}
+
+@font-face {
+  font-family: "EBGaramond";
+  src: url("/_fonts/variable/EBGaramond.ttf");
 }

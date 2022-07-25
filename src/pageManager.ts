@@ -64,17 +64,21 @@ class PageManager {
   }
 
   async processPage(page: Page) {
+    console.log("waiting for links to load");
     await Promise.all(
-      Array.from(page.container.querySelectorAll("link")).map(
-        (link) =>
-          new Promise((resolve) => {
-            link.onload = link.onerror = resolve;
-          })
-      )
+      Array.from(page.container.querySelectorAll("link"))
+        .filter((link) => !link.getAttribute("type")?.includes("adobe"))
+        .map(
+          (link) =>
+            new Promise((resolve) => {
+              link.onload = link.onerror = resolve;
+            })
+        )
     ).then(() => {
       console.log("links finished loading");
     });
 
+    console.log("waiting for images to load");
     await Promise.all(
       Array.from(page.container.querySelectorAll("img"))
         .filter((img) => !img.complete)
@@ -127,10 +131,13 @@ class PageManager {
     ) {
       if (pageFilePath != this.pageFilePath) {
         // Recreate the page if the html is different
+
+        window.history.pushState("", "", "/");
         const html = await (await fetch(pageFilePath)).text();
 
         this.page?.destroy();
         this.pageFilePath = pageFilePath;
+        window.history.pushState("", "", pageFilePath);
         this.page = new Page(this.parent, html!, this.style);
         await this.processPage(this.page);
         this.page.initialize();
@@ -153,15 +160,6 @@ class PageManager {
   }
 
   onStyle(style: StyleProperties) {
-    if (style.fontPath.length > 0) {
-      this.fontCSSElement.innerHTML = `
-      @font-face {
-        font-family: '${style.fontFamily}';
-        src: url('${style.fontPath}');
-      }
-      `;
-    }
-
     this.style = style;
     this.page?.unsafelySetStyle(style);
   }

@@ -22,7 +22,7 @@ class Page {
   constructor(
     public readonly parent: Element,
     public readonly initialHtml: string,
-    public readonly style: StyleProperties
+    private _style: StyleProperties
   ) {
     this._element = document.createElement("div");
     this._element.style.columnWidth = "100vw";
@@ -31,7 +31,6 @@ class Page {
     this._element.className = "page";
 
     this.container = document.createElement("div");
-    this.container.style.background = "black";
     this.container.style.position = "fixed";
     this.container.style.inset = "0";
     this.container.style.width = "100%";
@@ -48,6 +47,10 @@ class Page {
   public container: HTMLElement;
   private _innerPage: number = 0;
   private _allAnchors;
+
+  get style() {
+    return this._style;
+  }
 
   get innerPages() {
     return this._innerPages;
@@ -76,6 +79,7 @@ class Page {
       letterSpacing: string;
       wordSpacing: string;
       textAlign: string;
+      textIndent: string;
     };
   }[] = [];
 
@@ -90,6 +94,7 @@ class Page {
           letterSpacing: styles.letterSpacing,
           wordSpacing: styles.wordSpacing,
           textAlign: styles.textAlign,
+          textIndent: styles.textIndent,
         },
       });
     });
@@ -169,19 +174,27 @@ class Page {
 
       props.element.style.fontWeight = this.style.fontWeight;
 
-      if (props.originalStyles.textAlign !== "center") {
+      if (props.originalStyles.textAlign === "center") {
+        props.element.style.textIndent = "0px";
+      } else {
+        props.element.style.textIndent = props.originalStyles.textIndent;
         props.element.style.textAlign = this.style.align;
       }
 
-      props.element.style.fontFamily = "FONT_NAME";
+      props.element.style.fontFamily = this.style.fontFamily;
 
-      if (props.element.tagName === "IMG") {
-        props.element.style.maxWidth = `calc(100vw - ${
-          this.style.margin.side * 2
-        }px)`;
-        props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
-      }
+      // if (props.element.tagName === "IMG") {
+      //   props.element.style.maxWidth = `calc(100vw - ${
+      //     this.style.margin.side * 2
+      //   }px)`;
+      //   props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
+      // }
     });
+  };
+
+  unsafelySetStyle = (style: StyleProperties) => {
+    this._style = style;
+    this.applyStyle();
   };
 
   applyStyleShowInnerPage = () => {

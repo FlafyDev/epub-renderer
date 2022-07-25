@@ -1,6 +1,6 @@
-const handlers = new Map<String, Function>();
+const handlers = new Map<String, (...args: any[]) => void>();
 
-const createHandler = (name: string, body: Function) => {
+const createHandler = (name: string, body: (...args: any[]) => void) => {
   if ((window as any).flutter_inappwebview === undefined) {
     (window as any).flutter_inappwebview = {
       callHandler: (name: string, ...args: any[]) => {
@@ -13,26 +13,14 @@ const createHandler = (name: string, body: Function) => {
 };
 
 const createHandlers = () => {
-  createHandler("loaded", () => {
-    (window as any).data("http://localhost:8081/");
-    (window as any).css("* { color: white !important; }");
-    (window as any).page("xhtml/epub30-overview.xhtml", 0);
+  createHandler("load", () => {
+    // (window as any).css("* { color: white !important; }");
+    (window as any).pageGoAnchor("xhtml/epub30-mediaoverlays.xhtml", "");
   });
 
-  let tested = false;
+  // let tests = 0;
 
-  createHandler("ready", () => {
-    if (tested) {
-      console.log("READY!");
-      return;
-    }
-
-    tested = true;
-    (window as any).pageGoAnchor(
-      "xhtml/epub30-publications.xhtml",
-      "sec-metadata-assoc"
-    );
-  });
+  // createHandler("ready", (_, __, c) => {});
 };
 
 export { createHandlers };

@@ -1,3 +1,4 @@
+import urlJoin from "url-join";
 import Page, { StyleProperties } from "./components/page";
 import {
   notifyLoad,
@@ -8,11 +9,14 @@ import {
   onPageGoAnchor,
   onClearSelection,
   onStyle,
+  notifyLink,
 } from "./controllerCom";
 import InnerLocation from "./models/innerLocation";
 import QuickSelection from "./quickSelection";
 import { assert } from "./utils/assert";
 import clearSelection from "./utils/clearSelection";
+
+const isUrlRegex = new RegExp("^(?:[a-z+]+:)?//", "i");
 
 class PageManager {
   page: Page | null = null;
@@ -83,6 +87,20 @@ class PageManager {
     ).then(() => {
       console.log("images finished loading");
     });
+
+    Array.from(page.container.getElementsByTagName("a")).forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const href = a.getAttribute("href");
+        if (href) {
+          notifyLink(
+            isUrlRegex.test(href)
+              ? href
+              : urlJoin(this.pageFilePath!, "..", href)
+          );
+        }
+      });
+    });
   }
 
   onSelection() {
@@ -138,13 +156,14 @@ class PageManager {
     if (style.fontPath.length > 0) {
       this.fontCSSElement.innerHTML = `
       @font-face {
-        font-family: 'FONT_NAME';
+        font-family: '${style.fontFamily}';
         src: url('${style.fontPath}');
       }
       `;
     }
 
     this.style = style;
+    this.page!.unsafelySetStyle(style);
   }
 
   onCSS(css: string) {

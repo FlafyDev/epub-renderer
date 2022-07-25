@@ -5,15 +5,20 @@ body {
   overflow: hidden;
 }
 
+html {
+  filter: invert(1) hue-rotate(0.5turn);
+  background-color: white;
+}
+
+img,
+image {
+  filter: invert(1) hue-rotate(0.5turn);
+}
+
 /* @font-face {
   font-family: "Literata";
   src: url("./fonts/Literata-VariableFont_opsz,wght.ttf");
 } */
-
-body {
-  color: white;
-  background-color: black;
-}
 
 * {
   word-wrap: break-word !important;

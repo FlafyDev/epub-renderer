@@ -1,5 +1,10 @@
 import { StyleProperties } from "./components/page";
-import { InnerAnchor, InnerPage } from "./models/innerLocation";
+import InnerLocation, {
+  InnerAnchor,
+  InnerElement,
+  InnerPage,
+  InnerTextNode,
+} from "./models/innerLocation";
 
 const callHandler = (name: string, ...args: any[]) => {
   // console.log(`${name}: "${message}"`);
@@ -14,11 +19,28 @@ export const onPage = (
     callback(pageFilePath, new InnerPage(innerPage ?? 0));
 };
 
-export const onPageGoAnchor = (
+export const onPageAnchor = (
   callback: (pageFilePath: string, innerAnchor: InnerAnchor) => void
 ) => {
-  (window as any).pageGoAnchor = (pageFilePath: string, innerAnchor: string) =>
-    callback(pageFilePath, new InnerAnchor(innerAnchor));
+  (window as any).pageAnchor = (pageFilePath: string, anchor: string) =>
+    callback(pageFilePath, new InnerAnchor(anchor));
+};
+
+export const onPageElement = (
+  callback: (pageFilePath: string, innerElement: InnerElement) => void
+) => {
+  (window as any).pageElement = (pageFilePath: string, elementIndex: number) =>
+    callback(pageFilePath, new InnerElement(elementIndex));
+};
+
+export const onPageTextNode = (
+  callback: (pageFilePath: string, innerTextNode: InnerTextNode) => void
+) => {
+  (window as any).pageTextNode = (
+    pageFilePath: string,
+    textNodeIndex: number,
+    characterIndex: number
+  ) => callback(pageFilePath, new InnerTextNode(textNodeIndex, characterIndex));
 };
 
 export const onStyle = (callback: (style: StyleProperties) => void) => {
@@ -41,9 +63,16 @@ export const notifyLoad = () => {
 export const notifyReady = (
   innerPage: number,
   innerPages: number,
-  passedAnchors: String[]
+  passedAnchors: String[],
+  consistentInnerLocation: InnerLocation
 ) => {
-  callHandler("ready", innerPage, innerPages, passedAnchors);
+  callHandler(
+    "ready",
+    innerPage,
+    innerPages,
+    passedAnchors,
+    consistentInnerLocation
+  );
 };
 
 export const notifySelection = (selection: string, box: DOMRect) => {

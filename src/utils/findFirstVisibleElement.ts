@@ -1,23 +1,14 @@
-const findFirstVisibleElement = async (elements: HTMLElement[]) => {
-  return (
-    (elements.length > 0 &&
-      new Promise<HTMLElement | null>((resolve) => {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.intersectionRatio > 0) {
-              resolve(entry.target as HTMLElement);
-              observer.disconnect();
-            }
-          });
-          resolve(null);
-        });
+import percentInView from "./percentInView";
 
-        elements.forEach((element) => {
-          observer.observe(element);
-        });
-      })) ||
-    null
-  );
+const findFirstVisibleElement = (parent: Element): Element => {
+  const children = parent.children;
+  for (let i = 0; i < children.length; i++) {
+    if (percentInView(children[i].getBoundingClientRect()) > 0) {
+      return findFirstVisibleElement(children[i]);
+    }
+  }
+
+  return parent;
 };
 
 export default findFirstVisibleElement;

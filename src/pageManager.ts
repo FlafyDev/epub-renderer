@@ -6,7 +6,9 @@ import {
   notifySelection,
   onCSS,
   onPage,
-  onPageGoAnchor,
+  onPageAnchor,
+  onPageElement,
+  onPageTextNode,
   onClearSelection,
   onStyle,
   notifyLink,
@@ -52,7 +54,9 @@ class PageManager {
     document.head.appendChild(this.fontCSSElement);
 
     onPage(this.onPage.bind(this));
-    onPageGoAnchor(this.onPage.bind(this));
+    onPageAnchor(this.onPage.bind(this));
+    onPageElement(this.onPage.bind(this));
+    onPageTextNode(this.onPage.bind(this));
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
     onClearSelection(this.onClearSelection.bind(this));
@@ -126,7 +130,7 @@ class PageManager {
     this.makingPage = true;
 
     if (
-      innerLocation.value != this.pageInnerLocation?.value ||
+      innerLocation.identifier != this.pageInnerLocation?.identifier ||
       pageFilePath != this.pageFilePath
     ) {
       if (pageFilePath != this.pageFilePath) {
@@ -172,7 +176,8 @@ class PageManager {
     notifyReady(
       this.page!.innerPage,
       this.page!.innerPages,
-      this.page!.passedAnchors
+      this.page!.passedAnchors,
+      this.page!.consistentInnerLocation!
     );
   }
 

@@ -1,5 +1,6 @@
 import "./style.css";
 import PageManager from "./pageManager";
+import { createHandlers } from "./testing/handlersSimulator";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.style.width = "100vw";
@@ -10,6 +11,8 @@ window.oncontextmenu = function (event) {
   event.stopPropagation();
   return false;
 };
+
+createHandlers();
 
 // Wait for window.flutter_inappwebview to be defined as a function.
 (async () => {

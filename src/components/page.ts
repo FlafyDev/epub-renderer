@@ -1,6 +1,15 @@
-import InnerLocation, { InnerAnchor, InnerPage } from "../models/innerLocation";
+import InnerLocation, {
+  InnerAnchor,
+  InnerElement,
+  InnerPage,
+  InnerTextNode,
+} from "../models/innerLocation";
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
+import findFirstVisibleElement from "../utils/findFirstVisibleElement";
+import findFirstVisibleText from "../utils/findFirstVisibleText";
+import getAllTextNodes from "../utils/getAllTextNodes";
+import textNodeGetBoundingClientRect from "../utils/textNodeGetBoundingClientRect";
 
 export interface StyleProperties {
   margin: {
@@ -40,13 +49,18 @@ class Page {
     this.parent.appendChild(this.container);
 
     this.renderHTML(initialHtml);
-    this._allAnchors = Array.from(document.querySelectorAll("[id]"));
+    this._allAnchors = Array.from(this._element.querySelectorAll("[id]"));
+    this._allElements = Array.from(this._element.querySelectorAll("*"));
+    this._allTextNodes = getAllTextNodes(this._element);
   }
 
   public passedAnchors: string[] = [];
   public container: HTMLElement;
   private _innerPage: number = 0;
   private _allAnchors;
+  private _allElements;
+  private _allTextNodes;
+  public consistentInnerLocation: InnerElement | InnerTextNode | null = null;
 
   get style() {
     return this._style;
@@ -111,20 +125,39 @@ class Page {
 
   getInnerPageFromInnerLocation = (innerLocation?: InnerLocation) => {
     if (innerLocation instanceof InnerPage) {
-      return innerLocation.value;
+      return innerLocation.innerPage;
     } else if (innerLocation instanceof InnerAnchor) {
       try {
         const anchorElement = this._element.querySelector(
-          `#${innerLocation.value}`
+          `#${innerLocation.anchor}`
         );
 
         if (!anchorElement) {
           return 0;
         }
 
-        return Math.floor(
-          this._getElementLeft(anchorElement) /
-            (this._element.scrollWidth / this.innerPages)
+        return this._getInnerPageOfBoundingRect(
+          anchorElement.getBoundingClientRect()
+        );
+      } catch {
+        return 0;
+      }
+    } else if (innerLocation instanceof InnerElement) {
+      try {
+        const element = this._allElements[innerLocation.elementIndex];
+
+        return this._getInnerPageOfBoundingRect(
+          element.getBoundingClientRect()
+        );
+      } catch {
+        return 0;
+      }
+    } else if (innerLocation instanceof InnerTextNode) {
+      try {
+        const textNode = this._allTextNodes[innerLocation.textNodeIndex];
+
+        return this._getInnerPageOfBoundingRect(
+          textNodeGetBoundingClientRect(textNode, innerLocation.characterIndex)
         );
       } catch {
         return 0;
@@ -213,20 +246,40 @@ class Page {
       this.style.margin.side * this.innerPage
     }px)`;
 
+    const firstVisibleText = findFirstVisibleText(this._element);
+    if (firstVisibleText == null) {
+      const firstElement = findFirstVisibleElement(this._element);
+      this.consistentInnerLocation = new InnerElement(
+        this._allElements.findIndex((elem) => elem == firstElement)
+      );
+    } else {
+      this.consistentInnerLocation = new InnerTextNode(
+        this._allTextNodes.findIndex(
+          (textNode) => textNode == firstVisibleText[0]
+        ),
+        firstVisibleText[1]
+      );
+    }
+
     this.passedAnchors = this._allAnchors
       .filter(
         (anchor) =>
-          Math.floor(
-            this._getElementLeft(anchor) /
-              (this._element.scrollWidth / this.innerPages)
-          ) <= this._innerPage
+          this._getInnerPageOfBoundingRect(anchor.getBoundingClientRect()) <=
+          this._innerPage
       )
       .map((anchor) => anchor.id);
   };
 
-  _getElementLeft = (element: Element) => {
+  _getInnerPageOfBoundingRect = (boundingRect: DOMRect) => {
+    return Math.floor(
+      this._getBoundingRectConsistentLeft(boundingRect) /
+        (this._element.scrollWidth / this.innerPages)
+    );
+  };
+
+  _getBoundingRectConsistentLeft = (boundingRect: DOMRect) => {
     return (
-      element.getBoundingClientRect().left -
+      boundingRect.left -
       Number(window.getComputedStyle(this._element).left.replace("px", ""))
     );
   };

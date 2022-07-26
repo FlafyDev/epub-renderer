@@ -14,13 +14,12 @@ const createHandler = (name: string, body: (...args: any[]) => void) => {
 
 const createHandlers = () => {
   createHandler("load", () => {
-    // (window as any).css("* { color: white !important; }");
-    (window as any).pageGoAnchor("xhtml/epub30-mediaoverlays.xhtml", "");
+    (window as any).page("Text/Hina_-01.xhtml", Number(prompt("innerpage")));
   });
 
-  // let tests = 0;
-
-  // createHandler("ready", (_, __, c) => {});
+  createHandler("ready", (_, __, ___, consistentLocation) => {
+    console.log(consistentLocation);
+  });
 };
 
 export { createHandlers };

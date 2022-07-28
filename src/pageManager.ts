@@ -101,11 +101,25 @@ class PageManager {
         e.preventDefault();
         const href = a.getAttribute("href");
         if (href) {
-          notifyLink(
-            isUrlRegex.test(href)
-              ? href
-              : urlJoin(this.pageFilePath!, "..", href)
-          );
+          let link: string;
+          link = href.trim();
+
+          if (!isUrlRegex.test(href)) {
+            switch (link[0]) {
+              case "#":
+                link = window.location.pathname + link;
+                break;
+              default:
+                link = urlJoin(window.location.pathname, "..", link);
+                break;
+            }
+          }
+
+          if (link[0] === "/") {
+            link = link.substring(1);
+          }
+
+          notifyLink(link);
         }
       });
     });

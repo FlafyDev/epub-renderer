@@ -136,7 +136,11 @@ class PageManager {
     );
   }
 
-  async onPage(pageFilePath: string, innerLocation: InnerLocation) {
+  async onPage(
+    pageFilePath: string,
+    innerLocation: InnerLocation,
+    forced: boolean
+  ) {
     if (this.makingPage) {
       this.queuedPage = { pageFilePath, innerLocation };
       return;
@@ -144,10 +148,11 @@ class PageManager {
     this.makingPage = true;
 
     if (
+      forced ||
       innerLocation.identifier != this.pageInnerLocation?.identifier ||
       pageFilePath != this.pageFilePath
     ) {
-      if (pageFilePath != this.pageFilePath) {
+      if (forced || pageFilePath != this.pageFilePath) {
         // Recreate the page if the html is different
 
         window.history.pushState("", "", "/");
@@ -171,7 +176,11 @@ class PageManager {
 
     this.makingPage = false;
     if (this.queuedPage) {
-      this.onPage(this.queuedPage.pageFilePath, this.queuedPage.innerLocation);
+      this.onPage(
+        this.queuedPage.pageFilePath,
+        this.queuedPage.innerLocation,
+        forced
+      );
     } else {
       this.onPageReady();
     }

@@ -13,34 +13,65 @@ const callHandler = (name: string, ...args: any[]) => {
 
 // From Controller
 export const onPage = (
-  callback: (pageFilePath: string, innerPage: InnerPage) => void
+  callback: (
+    pageFilePath: string,
+    innerPage: InnerPage,
+    forced: boolean
+  ) => void
 ) => {
-  (window as any).page = (pageFilePath: string, innerPage?: number) =>
-    callback(pageFilePath, new InnerPage(innerPage ?? 0));
+  (window as any).page = (
+    pageFilePath: string,
+    innerPage?: number,
+    forced: boolean = false
+  ) => callback(pageFilePath, new InnerPage(innerPage ?? 0), forced);
 };
 
 export const onPageAnchor = (
-  callback: (pageFilePath: string, innerAnchor: InnerAnchor) => void
+  callback: (
+    pageFilePath: string,
+    innerAnchor: InnerAnchor,
+    forced: boolean
+  ) => void
 ) => {
-  (window as any).pageAnchor = (pageFilePath: string, anchor: string) =>
-    callback(pageFilePath, new InnerAnchor(anchor));
+  (window as any).pageAnchor = (
+    pageFilePath: string,
+    anchor: string,
+    forced: boolean = false
+  ) => callback(pageFilePath, new InnerAnchor(anchor), forced);
 };
 
 export const onPageElement = (
-  callback: (pageFilePath: string, innerElement: InnerElement) => void
+  callback: (
+    pageFilePath: string,
+    innerElement: InnerElement,
+    forced: boolean
+  ) => void
 ) => {
-  (window as any).pageElement = (pageFilePath: string, elementIndex: number) =>
-    callback(pageFilePath, new InnerElement(elementIndex));
+  (window as any).pageElement = (
+    pageFilePath: string,
+    elementIndex: number,
+    forced: boolean = false
+  ) => callback(pageFilePath, new InnerElement(elementIndex), forced);
 };
 
 export const onPageTextNode = (
-  callback: (pageFilePath: string, innerTextNode: InnerTextNode) => void
+  callback: (
+    pageFilePath: string,
+    innerTextNode: InnerTextNode,
+    forced: boolean
+  ) => void
 ) => {
   (window as any).pageTextNode = (
     pageFilePath: string,
     textNodeIndex: number,
-    characterIndex: number
-  ) => callback(pageFilePath, new InnerTextNode(textNodeIndex, characterIndex));
+    characterIndex: number,
+    forced: boolean = false
+  ) =>
+    callback(
+      pageFilePath,
+      new InnerTextNode(textNodeIndex, characterIndex),
+      forced
+    );
 };
 
 export const onStyle = (callback: (style: StyleProperties) => void) => {

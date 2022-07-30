@@ -51,7 +51,7 @@ class Page {
     this.renderHTML(initialHtml);
     this._allAnchors = Array.from(this._element.querySelectorAll("[id]"));
     this._allElements = Array.from(this._element.querySelectorAll("*"));
-    this._allTextNodes = getAllTextNodes(this._element);
+    this._allTextNodes = getAllTextNodes(this._element).slice(1);
   }
 
   public passedAnchors: string[] = [];

@@ -4,11 +4,14 @@ import InnerLocation, {
   InnerPage,
   InnerTextNode,
 } from "../models/innerLocation";
+import NoteData from "../models/noteData";
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 import findFirstVisibleElement from "../utils/findFirstVisibleElement";
 import findFirstVisibleText from "../utils/findFirstVisibleText";
+import getAllNodes from "../utils/getAllNodes";
 import getAllTextNodes from "../utils/getAllTextNodes";
+import highlightElements from "../utils/highlightElements";
 import textNodeGetBoundingClientRect from "../utils/textNodeGetBoundingClientRect";
 
 export interface StyleProperties {
@@ -52,6 +55,9 @@ class Page {
     this._allAnchors = Array.from(this._element.querySelectorAll("[id]"));
     this._allElements = Array.from(this._element.querySelectorAll("*"));
     this._allTextNodes = getAllTextNodes(this._element).slice(1);
+    this._allNodes = getAllNodes(this._element)
+      .slice(1)
+      .map((node) => [node]);
   }
 
   public passedAnchors: string[] = [];
@@ -60,6 +66,7 @@ class Page {
   private _allAnchors;
   private _allElements;
   private _allTextNodes;
+  private _allNodes: Node[][];
   public consistentInnerLocation: InnerElement | InnerTextNode | null = null;
 
   get style() {
@@ -72,6 +79,10 @@ class Page {
 
   get innerPage() {
     return this._innerPage;
+  }
+
+  get allNodes() {
+    return this._allNodes;
   }
 
   set innerPage(value: number) {
@@ -227,6 +238,34 @@ class Page {
       //   props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
       // }
     });
+  };
+
+  applyNotes = (notes: NoteData[]) => {
+    Array.from(this._element.getElementsByClassName("note-container")).forEach(
+      (elem) => {
+        elem.replaceWith(...Array.from(elem.childNodes));
+      }
+    );
+    notes.forEach((note) => {
+      const ranges = note.ranges.map((rangeData) => {
+        return rangeData.toRange(this);
+      });
+
+      const selection = window.getSelection();
+
+      if (selection == null) return;
+
+      selection.removeAllRanges();
+      ranges.forEach((range) => selection.addRange(range));
+
+      highlightElements(
+        selection,
+        `note-container highlight-${note.color}`,
+        this.allNodes
+      );
+    });
+
+    window.getSelection()?.removeAllRanges();
   };
 
   unsafelySetStyle = (style: StyleProperties) => {

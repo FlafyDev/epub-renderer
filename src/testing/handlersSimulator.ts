@@ -1,3 +1,5 @@
+import NoteData, { NoteRangeData } from "../models/noteData";
+
 const handlers = new Map<String, (...args: any[]) => void>();
 
 const createHandler = (name: string, body: (...args: any[]) => void) => {
@@ -14,7 +16,14 @@ const createHandler = (name: string, body: (...args: any[]) => void) => {
 
 const createHandlers = () => {
   createHandler("load", () => {
-    (window as any).page("Text/Hina_-01.xhtml", Number(prompt("innerpage")));
+    (window as any).page("xhtml/epub30-titlepage.xhtml", 0, null, [
+      new NoteData([new NoteRangeData(23, 6, 23, 15)], "yellow"),
+    ]);
+  });
+
+  createHandler("selection", (text: string, ranges: NoteRangeData[]) => {
+    console.log(text);
+    console.log(ranges);
   });
 
   createHandler("ready", (_, __, ___, consistentLocation) => {

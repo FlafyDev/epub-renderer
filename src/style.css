@@ -3,15 +3,15 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-}
-
-html {
-  filter: invert(1) hue-rotate(0.5turn);
   background-color: white;
 }
 
-img,
-image {
+html.dark {
+  filter: invert(1) hue-rotate(0.5turn);
+}
+
+html.dark img,
+html.dark image {
   filter: invert(1) hue-rotate(0.5turn);
   max-width: 100%;
   max-height: 100%;
@@ -34,4 +34,16 @@ a:visited {
 @font-face {
   font-family: "RobotoMono";
   src: url("/_fonts/variable/RobotoMono.ttf");
+}
+
+.highlight-yellow {
+  background-color: rgb(255, 255, 0);
+}
+
+html.dark .highlight-yellow {
+  background-color: rgb(128, 128, 0);
+}
+
+.highlight-bold {
+  text-shadow: 1px 1px 1px gray;
 }

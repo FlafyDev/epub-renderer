@@ -6,14 +6,15 @@ import {
   notifySelection,
   onCSS,
   onPage,
-  onPageAnchor,
-  onPageElement,
-  onPageTextNode,
+  // onPageAnchor,
+  // onPageElement,
+  // onPageTextNode,
   onClearSelection,
   onStyle,
   notifyLink,
 } from "./controllerCom";
 import InnerLocation from "./models/innerLocation";
+import NoteData, { NoteRangeData } from "./models/noteData";
 import QuickSelection from "./quickSelection";
 import { assert } from "./utils/assert";
 import clearSelection from "./utils/clearSelection";
@@ -54,9 +55,9 @@ class PageManager {
     document.head.appendChild(this.fontCSSElement);
 
     onPage(this.onPage.bind(this));
-    onPageAnchor(this.onPage.bind(this));
-    onPageElement(this.onPage.bind(this));
-    onPageTextNode(this.onPage.bind(this));
+    // onPageAnchor(this.onPage.bind(this));
+    // onPageElement(this.onPage.bind(this));
+    // onPageTextNode(this.onPage.bind(this));
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
     onClearSelection(this.onClearSelection.bind(this));
@@ -126,11 +127,23 @@ class PageManager {
   }
 
   onSelection() {
-    const selection = window.getSelection()?.toString() ?? "";
+    const selection = window.getSelection();
+    const text = selection?.toString() ?? "";
+    const ranges: Range[] = [];
+
+    if (selection) {
+      for (let i = 0; i < selection.rangeCount; i++) {
+        ranges.push(selection.getRangeAt(i));
+      }
+    }
+
+    console.log("-------------------------");
+    console.log(ranges);
 
     notifySelection(
-      selection,
-      selection.length > 0
+      text,
+      ranges.map((range) => NoteRangeData.fromRange(this.page!, range)),
+      text.length > 0
         ? window.getSelection()!.getRangeAt(0).getBoundingClientRect()
         : new DOMRect(0, 0, 0, 0)
     );
@@ -139,7 +152,8 @@ class PageManager {
   async onPage(
     pageFilePath: string,
     innerLocation: InnerLocation,
-    forced: boolean
+    forced: boolean,
+    notesData: NoteData[]
   ) {
     if (this.makingPage) {
       this.queuedPage = { pageFilePath, innerLocation };
@@ -174,12 +188,15 @@ class PageManager {
       this.page.applyStyleShowInnerPage();
     }
 
+    this.page!.applyNotes(notesData);
+
     this.makingPage = false;
     if (this.queuedPage) {
       this.onPage(
         this.queuedPage.pageFilePath,
         this.queuedPage.innerLocation,
-        forced
+        forced,
+        notesData
       );
     } else {
       this.onPageReady();

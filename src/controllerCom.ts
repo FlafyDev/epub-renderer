@@ -5,6 +5,7 @@ import InnerLocation, {
   InnerPage,
   InnerTextNode,
 } from "./models/innerLocation";
+import NoteData, { NoteRangeData } from "./models/noteData";
 
 const callHandler = (name: string, ...args: any[]) => {
   // console.log(`${name}: "${message}"`);
@@ -16,14 +17,22 @@ export const onPage = (
   callback: (
     pageFilePath: string,
     innerPage: InnerPage,
-    forced: boolean
+    forced: boolean,
+    notesData: NoteData[]
   ) => void
 ) => {
   (window as any).page = (
     pageFilePath: string,
     innerPage?: number,
-    forced: boolean = false
-  ) => callback(pageFilePath, new InnerPage(innerPage ?? 0), forced);
+    forced?: boolean,
+    notesData?: NoteData[]
+  ) =>
+    callback(
+      pageFilePath,
+      new InnerPage(innerPage ?? 0),
+      forced ?? false,
+      notesData ?? []
+    );
 };
 
 export const onPageAnchor = (
@@ -106,10 +115,15 @@ export const notifyReady = (
   );
 };
 
-export const notifySelection = (selection: string, box: DOMRect) => {
+export const notifySelection = (
+  selection: string,
+  notesRangeData: NoteRangeData[] | null,
+  box: DOMRect
+) => {
   callHandler(
     "selection",
     selection,
+    notesRangeData,
     Math.floor(box.left),
     Math.floor(box.top),
     Math.floor(box.width),

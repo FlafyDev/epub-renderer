@@ -50,7 +50,11 @@ export class NoteRangeData {
 }
 
 class NoteData {
-  constructor(public ranges: NoteRangeData[], public color: "yellow") {}
+  constructor(
+    public id: string,
+    public ranges: NoteRangeData[],
+    public color: "yellow"
+  ) {}
 }
 
 export default NoteData;

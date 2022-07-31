@@ -39,47 +39,60 @@ export const onPageAnchor = (
   callback: (
     pageFilePath: string,
     innerAnchor: InnerAnchor,
-    forced: boolean
+    forced: boolean,
+    notesData: NoteData[]
   ) => void
 ) => {
   (window as any).pageAnchor = (
     pageFilePath: string,
     anchor: string,
-    forced: boolean = false
-  ) => callback(pageFilePath, new InnerAnchor(anchor), forced);
+    forced: boolean = false,
+    notesData?: NoteData[]
+  ) => callback(pageFilePath, new InnerAnchor(anchor), forced, notesData ?? []);
 };
 
 export const onPageElement = (
   callback: (
     pageFilePath: string,
     innerElement: InnerElement,
-    forced: boolean
+    forced: boolean,
+    notesData: NoteData[]
   ) => void
 ) => {
   (window as any).pageElement = (
     pageFilePath: string,
     elementIndex: number,
-    forced: boolean = false
-  ) => callback(pageFilePath, new InnerElement(elementIndex), forced);
+    forced: boolean = false,
+    notesData?: NoteData[]
+  ) =>
+    callback(
+      pageFilePath,
+      new InnerElement(elementIndex),
+      forced,
+      notesData ?? []
+    );
 };
 
 export const onPageTextNode = (
   callback: (
     pageFilePath: string,
     innerTextNode: InnerTextNode,
-    forced: boolean
+    forced: boolean,
+    notesData: NoteData[]
   ) => void
 ) => {
   (window as any).pageTextNode = (
     pageFilePath: string,
     textNodeIndex: number,
     characterIndex: number,
-    forced: boolean = false
+    forced: boolean = false,
+    notesData?: NoteData[]
   ) =>
     callback(
       pageFilePath,
       new InnerTextNode(textNodeIndex, characterIndex),
-      forced
+      forced,
+      notesData ?? []
     );
 };
 

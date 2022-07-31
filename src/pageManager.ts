@@ -6,9 +6,9 @@ import {
   notifySelection,
   onCSS,
   onPage,
-  // onPageAnchor,
-  // onPageElement,
-  // onPageTextNode,
+  onPageAnchor,
+  onPageElement,
+  onPageTextNode,
   onClearSelection,
   onStyle,
   notifyLink,
@@ -55,9 +55,9 @@ class PageManager {
     document.head.appendChild(this.fontCSSElement);
 
     onPage(this.onPage.bind(this));
-    // onPageAnchor(this.onPage.bind(this));
-    // onPageElement(this.onPage.bind(this));
-    // onPageTextNode(this.onPage.bind(this));
+    onPageAnchor(this.onPage.bind(this));
+    onPageElement(this.onPage.bind(this));
+    onPageTextNode(this.onPage.bind(this));
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
     onClearSelection(this.onClearSelection.bind(this));
@@ -155,6 +155,19 @@ class PageManager {
     forced: boolean,
     notesData: NoteData[]
   ) {
+    notesData.forEach(
+      (note) =>
+        (note.ranges = note.ranges.map(
+          (range) =>
+            new NoteRangeData(
+              range.startNodeIndex,
+              range.startOffset,
+              range.endNodeIndex,
+              range.endOffset
+            )
+        ))
+    );
+
     if (this.makingPage) {
       this.queuedPage = { pageFilePath, innerLocation };
       return;

@@ -17,7 +17,7 @@ const createHandler = (name: string, body: (...args: any[]) => void) => {
 const createHandlers = () => {
   createHandler("load", () => {
     (window as any).page("xhtml/epub30-titlepage.xhtml", 0, null, [
-      new NoteData([new NoteRangeData(23, 6, 23, 15)], "yellow"),
+      new NoteData("Adas", [new NoteRangeData(23, 6, 23, 15)], "yellow"),
     ]);
   });
 

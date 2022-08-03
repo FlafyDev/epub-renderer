@@ -1,6 +1,8 @@
 class QuickSelection {
   enabled = false;
 
+  constructor() {}
+
   toggle = (enable: boolean) => {
     if (enable) {
       if (!this.enabled) {

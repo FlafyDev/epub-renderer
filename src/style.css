@@ -36,14 +36,50 @@ a:visited {
   src: url("/_fonts/variable/RobotoMono.ttf");
 }
 
-.highlight-yellow {
+.__highlight-bold {
+  text-shadow: 1px 1px 1px black;
+}
+
+html.dark .__highlight-bold {
+  text-shadow: 1px 1px 1px white;
+}
+
+.__note-has-desc {
+  text-decoration-line: underline;
+}
+
+/* yellow */
+.__highlight-yellow {
   background-color: rgb(255, 255, 0);
 }
 
-html.dark .highlight-yellow {
-  background-color: rgb(128, 128, 0);
+html.dark .__highlight-yellow {
+  background-color: rgb(96, 96, 0);
 }
 
-.highlight-bold {
-  text-shadow: 1px 1px 1px gray;
+/* green */
+.__highlight-green {
+  background-color: rgb(0, 255, 0);
+}
+
+html.dark .__highlight-green {
+  background-color: rgb(0, 96, 2);
+}
+
+/* blue */
+.__highlight-blue {
+  background-color: rgb(0, 183, 255);
+}
+
+html.dark .__highlight-blue {
+  background-color: rgb(0, 65, 96);
+}
+
+/* red */
+.__highlight-red {
+  background-color: rgb(255, 0, 0);
+}
+
+html.dark .__highlight-red {
+  background-color: rgb(249, 119, 119);
 }

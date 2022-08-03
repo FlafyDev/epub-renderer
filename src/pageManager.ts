@@ -12,6 +12,7 @@ import {
   onClearSelection,
   onStyle,
   notifyLink,
+  notifyNotePress,
 } from "./controllerCom";
 import InnerLocation from "./models/innerLocation";
 import NoteData, { NoteRangeData } from "./models/noteData";
@@ -126,27 +127,49 @@ class PageManager {
     });
   }
 
+  quickClicked = false;
+  selectionDelay: NodeJS.Timeout | null = null;
+
   onSelection() {
-    const selection = window.getSelection();
-    const text = selection?.toString() ?? "";
-    const ranges: Range[] = [];
-
-    if (selection) {
-      for (let i = 0; i < selection.rangeCount; i++) {
-        ranges.push(selection.getRangeAt(i));
-      }
+    if (this.selectionDelay) {
+      clearTimeout(this.selectionDelay);
     }
+    this.selectionDelay = setTimeout(() => {
+      const selection = window.getSelection();
+      const text = selection?.toString() ?? "";
+      const ranges: Range[] = [];
 
-    console.log("-------------------------");
-    console.log(ranges);
+      if (selection) {
+        for (let i = 0; i < selection.rangeCount; i++) {
+          ranges.push(selection.getRangeAt(i));
+        }
+      }
 
-    notifySelection(
-      text,
-      ranges.map((range) => NoteRangeData.fromRange(this.page!, range)),
-      text.length > 0
-        ? window.getSelection()!.getRangeAt(0).getBoundingClientRect()
-        : new DOMRect(0, 0, 0, 0)
-    );
+      // const noteElementsKeys = [...this.page!.noteElements.keys()];
+
+      // const selectedNoteIds = getNodesFromSelection(selection!)
+      //   .map((node) =>
+      //     noteElementsKeys.find((key) => {
+      //       return this.page!.noteElements.get(key)?.includes(
+      //         node.parentElement!
+      //       );
+      //     })
+      //   )
+      //   .filter((id) => typeof id === "string") as string[];
+
+      notifySelection(
+        text,
+        ranges.map((range) => NoteRangeData.fromRange(this.page!, range)),
+        text.length > 0
+          ? window.getSelection()!.getRangeAt(0).getBoundingClientRect()
+          : new DOMRect(0, 0, 0, 0)
+      );
+    }, 100);
+  }
+
+  onNotePress(noteId: string) {
+    window.getSelection()?.removeAllRanges();
+    notifyNotePress(noteId);
   }
 
   async onPage(
@@ -188,7 +211,13 @@ class PageManager {
         this.page?.destroy();
         this.pageFilePath = pageFilePath;
         window.history.pushState("", "", pageFilePath);
-        this.page = new Page(this.parent, html!, this.style);
+        this.page = new Page(
+          this.parent,
+          html!,
+          this.style,
+          notesData,
+          this.onNotePress.bind(this)
+        );
         await this.processPage(this.page);
         this.page.initialize();
       }
@@ -200,8 +229,6 @@ class PageManager {
         this.page.getInnerPageFromInnerLocation(innerLocation);
       this.page.applyStyleShowInnerPage();
     }
-
-    this.page!.applyNotes(notesData);
 
     this.makingPage = false;
     if (this.queuedPage) {

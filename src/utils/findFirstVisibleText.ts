@@ -11,7 +11,6 @@ const findFirstVisibleText = (parent: Element): [Text, number] | null => {
       percentInView(textNodeGetBoundingClientRect(textNode, null, range)) > 0
     ) {
       const characters = textNode.length;
-      console.log(characters);
       for (let j = 0; j < characters - 1; j++) {
         const rect = textNodeGetBoundingClientRect(textNode, j, range);
         if (percentInView(rect) > 0) {

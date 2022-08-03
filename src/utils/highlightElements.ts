@@ -1,6 +1,12 @@
 // https://stackoverflow.com/a/66878952/10849036
 
-const getNodes = (selection: Selection, childList: NodeListOf<ChildNode>) => {
+import { OriginalNodeData } from "../components/page";
+import insert from "./insert";
+
+export const getNodes = (
+  selection: Selection,
+  childList: NodeListOf<ChildNode>
+) => {
   let nodes: Node[] = [];
   childList.forEach((node) => {
     const nodeSel = selection.containsNode(node, true);
@@ -24,7 +30,7 @@ const getNodes = (selection: Selection, childList: NodeListOf<ChildNode>) => {
 const highlightElements = (
   selection: Selection,
   className: string,
-  allNodes: Node[][]
+  originalNodesData: OriginalNodeData[]
 ) => {
   const range = selection.getRangeAt(0);
   const {
@@ -38,39 +44,55 @@ const highlightElements = (
   if (startContainer === endContainer) {
     const span = document.createElement("span");
     span.className = className;
-    range.surroundContents(span);
 
-    const nodeIndex = allNodes.findIndex((nodes) =>
-      nodes.includes(startContainer)
+    const ogNodeIndex = originalNodesData.findIndex((ogData) =>
+      ogData.parts.some((part) => part.node === startContainer)
     );
+
+    const ogNodePartIndex = originalNodesData[ogNodeIndex].parts.findIndex(
+      (part) => part.node === startContainer
+    );
+
+    range.surroundContents(span);
 
     const children = Array.from(startContainer.parentNode!.childNodes);
     const spanIndex = children.indexOf(span);
 
-    console.log(children);
-    console.log(spanIndex);
+    let newOgNodeData: OriginalNodeData = new OriginalNodeData([]);
 
-    let newParts = [];
+    // console.log(children);
 
     if (spanIndex != 0) {
       const prevSpan = children[spanIndex - 1];
-      newParts.push(prevSpan);
+      newOgNodeData.parts.push({
+        node: prevSpan,
+        preLength:
+          originalNodesData[ogNodeIndex].parts[ogNodePartIndex].preLength,
+      });
     }
 
     if (spanIndex != children.length - 1) {
       const nextSpan = children[spanIndex + 1];
-      newParts.push(nextSpan);
+      newOgNodeData.parts.push({
+        node: nextSpan,
+        preLength: span.textContent?.length ?? 0,
+      });
     }
 
-    allNodes[nodeIndex] = newParts;
+    originalNodesData[ogNodeIndex].parts.splice(ogNodePartIndex, 1);
+    originalNodesData[ogNodeIndex].parts = insert(
+      originalNodesData[ogNodeIndex].parts,
+      ogNodePartIndex,
+      ...newOgNodeData.parts
+    );
+
+    console.log(span.textContent?.length);
+    console.log("originalNodeData parts", originalNodesData[ogNodeIndex].parts);
 
     return;
   }
 
-  // get all possibles selected nodes
   const nodes = getNodes(selection, commonAncestorContainer.childNodes);
-
-  console.log(nodes);
 
   nodes.forEach((node, index, listObj) => {
     const { nodeValue } = node;
@@ -97,21 +119,48 @@ const highlightElements = (
     span.append(document.createTextNode(text));
     const { parentNode } = node;
 
-    const nodeIndex = allNodes.findIndex((nodes) => nodes.includes(node));
+    const ogNodeIndex = originalNodesData.findIndex((ogData) =>
+      ogData.parts.some((part) => part.node === node)
+    );
+
+    const ogNodePartIndex = originalNodesData[ogNodeIndex].parts.findIndex(
+      (part) => part.node === node
+    );
+
+    const preLength =
+      originalNodesData[ogNodeIndex].parts[ogNodePartIndex].preLength;
+
+    originalNodesData[ogNodeIndex].parts.splice(ogNodePartIndex, 1);
 
     parentNode?.replaceChild(span, node);
 
     if (prevText) {
       const prevDOM = document.createTextNode(prevText);
-      allNodes[nodeIndex] = [prevDOM];
       parentNode?.insertBefore(prevDOM, span);
+
+      originalNodesData[ogNodeIndex].parts = insert(
+        originalNodesData[ogNodeIndex].parts,
+        ogNodePartIndex,
+        {
+          node: prevDOM,
+          preLength: preLength,
+        }
+      );
+    } else if (nextText) {
+      const nextDOM = document.createTextNode(nextText);
+      parentNode?.insertBefore(nextDOM, span.nextSibling);
+      originalNodesData[ogNodeIndex].parts = insert(
+        originalNodesData[ogNodeIndex].parts,
+        ogNodePartIndex,
+        {
+          node: nextDOM,
+          preLength: preLength,
+        }
+      );
     }
 
-    if (nextText) {
-      const nextDOM = document.createTextNode(nextText);
-      allNodes[nodeIndex] = [nextDOM];
-      parentNode?.insertBefore(nextDOM, span.nextSibling);
-    }
+    console.log(`changed: ${ogNodeIndex}`);
+    console.log("originalNodeData", originalNodesData);
   });
 };
 

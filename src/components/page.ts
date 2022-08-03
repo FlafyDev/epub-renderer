@@ -30,11 +30,19 @@ export interface StyleProperties {
   wordSpacingMultiplier: number;
 }
 
+const notesColorToName = ["yellow", "green", "blue", "red"];
+
+export class OriginalNodeData {
+  constructor(public parts: { node: Node; preLength: number }[]) {}
+}
+
 class Page {
   constructor(
     public readonly parent: Element,
     public readonly initialHtml: string,
-    private _style: StyleProperties
+    private _style: StyleProperties,
+    notes: NoteData[],
+    private readonly onNotePressed: (noteId: string) => void
   ) {
     this._element = document.createElement("div");
     this._element.style.columnWidth = "100vw";
@@ -55,9 +63,68 @@ class Page {
     this._allAnchors = Array.from(this._element.querySelectorAll("[id]"));
     this._allElements = Array.from(this._element.querySelectorAll("*"));
     this._allTextNodes = getAllTextNodes(this._element).slice(1);
-    this._allNodes = getAllNodes(this._element)
+    this._originalNodesData = getAllNodes(this._element)
       .slice(1)
-      .map((node) => [node]);
+      .map(
+        (node) =>
+          new OriginalNodeData([
+            {
+              node,
+              preLength: 0,
+            },
+          ])
+      );
+
+    notes.forEach((note) => {
+      const ranges = note.ranges.map((rangeData) => {
+        return rangeData.toRange(this);
+      });
+
+      const selection = window.getSelection();
+
+      if (selection == null) return;
+
+      selection.removeAllRanges();
+      ranges.forEach((range) => selection.addRange(range));
+
+      highlightElements(
+        selection,
+        [
+          `__highlight-${notesColorToName[note.color]}`,
+          "__note",
+          `__note-id-${note.id}`,
+          note.hasDescription ? "__note-has-desc" : "",
+          "__highlight-bold",
+        ].join(" "),
+        this.originalNodesData
+      );
+
+      console.log(this.originalNodesData);
+    });
+
+    console.log(this._originalNodesData);
+
+    window.getSelection()?.removeAllRanges();
+
+    this._noteElements = new Map();
+
+    Array.from(this._element.getElementsByClassName("__note")).map((node) => {
+      const id =
+        Array.from(node.classList)
+          .find((className) => className.startsWith("__note-id"))
+          ?.substring(10) ?? "";
+
+      node.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.onNotePressed(id);
+      });
+
+      if (this._noteElements.has(id)) {
+        this._noteElements.set(id, this._noteElements.get(id)!.concat(node));
+      } else {
+        this._noteElements.set(id, [node]);
+      }
+    });
   }
 
   public passedAnchors: string[] = [];
@@ -66,7 +133,8 @@ class Page {
   private _allAnchors;
   private _allElements;
   private _allTextNodes;
-  private _allNodes: Node[][];
+  private _originalNodesData: OriginalNodeData[];
+  private _noteElements: Map<string, Element[]>;
   public consistentInnerLocation: InnerElement | InnerTextNode | null = null;
 
   get style() {
@@ -81,8 +149,12 @@ class Page {
     return this._innerPage;
   }
 
-  get allNodes() {
-    return this._allNodes;
+  get originalNodesData() {
+    return this._originalNodesData;
+  }
+
+  get noteElements() {
+    return this._noteElements;
   }
 
   set innerPage(value: number) {
@@ -238,34 +310,6 @@ class Page {
       //   props.element.style.maxHeight = `calc(100vh - ${this.style.margin.top}px - ${this.style.margin.bottom}px)`;
       // }
     });
-  };
-
-  applyNotes = (notes: NoteData[]) => {
-    Array.from(this._element.getElementsByClassName("note-container")).forEach(
-      (elem) => {
-        elem.replaceWith(...Array.from(elem.childNodes));
-      }
-    );
-    notes.forEach((note) => {
-      const ranges = note.ranges.map((rangeData) => {
-        return rangeData.toRange(this);
-      });
-
-      const selection = window.getSelection();
-
-      if (selection == null) return;
-
-      selection.removeAllRanges();
-      ranges.forEach((range) => selection.addRange(range));
-
-      highlightElements(
-        selection,
-        `note-container highlight-${note.color}`,
-        this.allNodes
-      );
-    });
-
-    window.getSelection()?.removeAllRanges();
   };
 
   unsafelySetStyle = (style: StyleProperties) => {

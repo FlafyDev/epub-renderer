@@ -128,6 +128,10 @@ export const notifyReady = (
   );
 };
 
+export const notifyNotePress = (nodeId: string) => {
+  callHandler("notePress", nodeId);
+};
+
 export const notifySelection = (
   selection: string,
   notesRangeData: NoteRangeData[] | null,

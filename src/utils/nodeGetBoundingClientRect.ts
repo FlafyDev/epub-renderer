@@ -11,7 +11,10 @@ const nodeGetBoundingClientRect = (
     range.selectNodeContents(node);
   } else {
     range.setStart(node, characterIndex);
-    range.setEnd(node, characterIndex + 1);
+    range.setEnd(
+      node,
+      Math.min(characterIndex + 1, node.textContent?.length ?? 0)
+    );
   }
   const rect = range.getBoundingClientRect();
   return rect;

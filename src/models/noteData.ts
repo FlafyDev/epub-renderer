@@ -50,19 +50,41 @@ export class NoteRangeData {
     const startNodeIndex = page.originalNodesData.findIndex((ogData) =>
       ogData.parts.some((part) => part.node === range.startContainer)
     );
+
+    const startPartIndex = page.originalNodesData[
+      startNodeIndex
+    ].parts.findIndex((part) => part.node == range.startContainer);
+
     const startOffset =
       range.startOffset +
-      page.originalNodesData[startNodeIndex].parts.find(
-        (part) => part.node == range.startContainer
-      )!.preLength;
+      page.originalNodesData[startNodeIndex].parts[startPartIndex].preLength +
+      page.originalNodesData[startNodeIndex].parts
+        .filter((_, i) => i < startPartIndex)
+        .reduce(
+          (passed, part) =>
+            passed + part.preLength + (part.node.textContent?.length ?? 0),
+          0
+        );
+
     const endNodeIndex = page.originalNodesData.findIndex((ogData) =>
       ogData.parts.some((part) => part.node === range.endContainer)
     );
+
+    const endPartIndex = page.originalNodesData[endNodeIndex].parts.findIndex(
+      (part) => part.node == range.endContainer
+    );
+
     const endOffset =
       range.endOffset +
-      page.originalNodesData[endNodeIndex].parts.find(
-        (part) => part.node == range.endContainer
-      )!.preLength;
+      page.originalNodesData[endNodeIndex].parts[endPartIndex].preLength +
+      page.originalNodesData[endNodeIndex].parts
+        .filter((_, i) => i < endPartIndex)
+        .reduce(
+          (passed, part) =>
+            passed + part.preLength + (part.node.textContent?.length ?? 0),
+          0
+        );
+
     return new NoteRangeData(
       startNodeIndex,
       startOffset,

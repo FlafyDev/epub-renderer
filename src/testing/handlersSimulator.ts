@@ -32,6 +32,7 @@ const createHandlers = () => {
       new NoteData("Adas5", [new NoteRangeData(23, 190, 28, 55)], 3, true),
       new NoteData("Adas4", [new NoteRangeData(23, 46, 23, 100)], 3, true),
       new NoteData("Adas2", [new NoteRangeData(23, 17, 23, 23)], 1, true),
+      new NoteData("Adas6", [new NoteRangeData(23, 157, 23, 163)], 1, true),
     ]);
   });
 

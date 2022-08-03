@@ -1,18 +1,16 @@
 import getAllTextNodes from "./getAllTextNodes";
 import percentInView from "./percentInView";
-import textNodeGetBoundingClientRect from "./textNodeGetBoundingClientRect";
+import nodeGetBoundingClientRect from "./nodeGetBoundingClientRect";
 
 const findFirstVisibleText = (parent: Element): [Text, number] | null => {
   const range = document.createRange();
   const textNodes = getAllTextNodes(parent);
   for (let i = 0; i < textNodes.length; i++) {
     const textNode = textNodes[i];
-    if (
-      percentInView(textNodeGetBoundingClientRect(textNode, null, range)) > 0
-    ) {
+    if (percentInView(nodeGetBoundingClientRect(textNode, null, range)) > 0) {
       const characters = textNode.length;
       for (let j = 0; j < characters - 1; j++) {
-        const rect = textNodeGetBoundingClientRect(textNode, j, range);
+        const rect = nodeGetBoundingClientRect(textNode, j, range);
         if (percentInView(rect) > 0) {
           return [textNode, Math.max(0, j)];
         }

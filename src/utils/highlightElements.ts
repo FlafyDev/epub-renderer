@@ -60,8 +60,6 @@ const highlightElements = (
 
     let newOgNodeData: OriginalNodeData = new OriginalNodeData([]);
 
-    // console.log(children);
-
     if (spanIndex != 0) {
       const prevSpan = children[spanIndex - 1];
       newOgNodeData.parts.push({
@@ -85,9 +83,6 @@ const highlightElements = (
       ogNodePartIndex,
       ...newOgNodeData.parts
     );
-
-    console.log(span.textContent?.length);
-    console.log("originalNodeData parts", originalNodesData[ogNodeIndex].parts);
 
     return;
   }
@@ -158,9 +153,6 @@ const highlightElements = (
         }
       );
     }
-
-    console.log(`changed: ${ogNodeIndex}`);
-    console.log("originalNodeData", originalNodesData);
   });
 };
 

@@ -1,6 +1,6 @@
 import Page, { OriginalNodeData } from "../components/page";
 
-const findNode = (
+export const findNodeByOriginalNodeData = (
   originalNodeData: OriginalNodeData,
   offset: number
 ): [Node, number] => {
@@ -28,20 +28,15 @@ export class NoteRangeData {
 
   toRange(page: Page): Range {
     const range = document.createRange();
-    const startRes = findNode(
+    const startRes = findNodeByOriginalNodeData(
       page.originalNodesData[this.startNodeIndex],
       this.startOffset
     );
-    console.log(startRes[0]);
-    console.log(this.startOffset);
-    console.log(startRes[1]);
     range.setStart(startRes[0], this.startOffset - startRes[1]);
-    const endRes = findNode(
+    const endRes = findNodeByOriginalNodeData(
       page.originalNodesData[this.endNodeIndex],
       this.endOffset
     );
-    console.log(this.endNodeIndex);
-    console.log(this.endOffset);
     range.setEnd(endRes[0], this.endOffset - endRes[1]);
     return range;
   }
@@ -50,40 +45,18 @@ export class NoteRangeData {
     const startNodeIndex = page.originalNodesData.findIndex((ogData) =>
       ogData.parts.some((part) => part.node === range.startContainer)
     );
-
-    const startPartIndex = page.originalNodesData[
-      startNodeIndex
-    ].parts.findIndex((part) => part.node == range.startContainer);
-
     const startOffset =
       range.startOffset +
-      page.originalNodesData[startNodeIndex].parts[startPartIndex].preLength +
-      page.originalNodesData[startNodeIndex].parts
-        .filter((_, i) => i < startPartIndex)
-        .reduce(
-          (passed, part) =>
-            passed + part.preLength + (part.node.textContent?.length ?? 0),
-          0
-        );
+      page.originalNodesData[startNodeIndex].getOffsetOfNode(
+        range.startContainer
+      );
 
     const endNodeIndex = page.originalNodesData.findIndex((ogData) =>
       ogData.parts.some((part) => part.node === range.endContainer)
     );
-
-    const endPartIndex = page.originalNodesData[endNodeIndex].parts.findIndex(
-      (part) => part.node == range.endContainer
-    );
-
     const endOffset =
       range.endOffset +
-      page.originalNodesData[endNodeIndex].parts[endPartIndex].preLength +
-      page.originalNodesData[endNodeIndex].parts
-        .filter((_, i) => i < endPartIndex)
-        .reduce(
-          (passed, part) =>
-            passed + part.preLength + (part.node.textContent?.length ?? 0),
-          0
-        );
+      page.originalNodesData[endNodeIndex].getOffsetOfNode(range.endContainer);
 
     return new NoteRangeData(
       startNodeIndex,

@@ -1,5 +1,5 @@
-const textNodeGetBoundingClientRect = (
-  textNode: Text,
+const nodeGetBoundingClientRect = (
+  node: Node,
   characterIndex: number | null = null,
   range: Range | null = null
 ) => {
@@ -8,13 +8,13 @@ const textNodeGetBoundingClientRect = (
   }
 
   if (characterIndex == null) {
-    range.selectNodeContents(textNode);
+    range.selectNodeContents(node);
   } else {
-    range.setStart(textNode, characterIndex);
-    range.setEnd(textNode, characterIndex + 1);
+    range.setStart(node, characterIndex);
+    range.setEnd(node, characterIndex + 1);
   }
   const rect = range.getBoundingClientRect();
   return rect;
 };
 
-export default textNodeGetBoundingClientRect;
+export default nodeGetBoundingClientRect;

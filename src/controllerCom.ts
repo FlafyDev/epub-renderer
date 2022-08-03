@@ -24,13 +24,13 @@ export const onPage = (
   (window as any).page = (
     pageFilePath: string,
     innerPage?: number,
-    forced?: boolean,
+    forced: boolean = false,
     notesData?: NoteData[]
   ) =>
     callback(
       pageFilePath,
       new InnerPage(innerPage ?? 0),
-      forced ?? false,
+      forced,
       notesData ?? []
     );
 };

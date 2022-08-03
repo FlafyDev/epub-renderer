@@ -4,15 +4,14 @@ import InnerLocation, {
   InnerPage,
   InnerTextNode,
 } from "../models/innerLocation";
-import NoteData from "../models/noteData";
+import NoteData, { findNodeByOriginalNodeData } from "../models/noteData";
 import calculateInnerPages from "../utils/calculateInnerPages";
 import clamp from "../utils/clamp";
 import findFirstVisibleElement from "../utils/findFirstVisibleElement";
 import findFirstVisibleText from "../utils/findFirstVisibleText";
 import getAllNodes from "../utils/getAllNodes";
-import getAllTextNodes from "../utils/getAllTextNodes";
 import highlightElements from "../utils/highlightElements";
-import textNodeGetBoundingClientRect from "../utils/textNodeGetBoundingClientRect";
+import nodeGetBoundingClientRect from "../utils/nodeGetBoundingClientRect";
 
 export interface StyleProperties {
   margin: {
@@ -34,6 +33,20 @@ const notesColorToName = ["yellow", "green", "blue", "red"];
 
 export class OriginalNodeData {
   constructor(public parts: { node: Node; preLength: number }[]) {}
+
+  getOffsetOfNode(node: Node): number {
+    const partIndex = this.parts.findIndex((part) => part.node == node);
+    return (
+      this.parts[partIndex].preLength +
+      this.parts
+        .filter((_, i) => i < partIndex)
+        .reduce(
+          (passed, part) =>
+            passed + part.preLength + (part.node.textContent?.length ?? 0),
+          0
+        )
+    );
+  }
 }
 
 class Page {
@@ -62,7 +75,7 @@ class Page {
     this.renderHTML(initialHtml);
     this._allAnchors = Array.from(this._element.querySelectorAll("[id]"));
     this._allElements = Array.from(this._element.querySelectorAll("*"));
-    this._allTextNodes = getAllTextNodes(this._element).slice(1);
+    // this._allTextNodes = getAllTextNodes(this._element).slice(1);
     this._originalNodesData = getAllNodes(this._element)
       .slice(1)
       .map(
@@ -98,11 +111,7 @@ class Page {
         ].join(" "),
         this.originalNodesData
       );
-
-      console.log(this.originalNodesData);
     });
-
-    console.log(this._originalNodesData);
 
     window.getSelection()?.removeAllRanges();
 
@@ -132,7 +141,7 @@ class Page {
   private _innerPage: number = 0;
   private _allAnchors;
   private _allElements;
-  private _allTextNodes;
+  // private _allTextNodes;
   private _originalNodesData: OriginalNodeData[];
   private _noteElements: Map<string, Element[]>;
   public consistentInnerLocation: InnerElement | InnerTextNode | null = null;
@@ -237,10 +246,16 @@ class Page {
       }
     } else if (innerLocation instanceof InnerTextNode) {
       try {
-        const textNode = this._allTextNodes[innerLocation.textNodeIndex];
+        const res = findNodeByOriginalNodeData(
+          this.originalNodesData[innerLocation.textNodeIndex],
+          innerLocation.characterIndex
+        );
 
         return this._getInnerPageOfBoundingRect(
-          textNodeGetBoundingClientRect(textNode, innerLocation.characterIndex)
+          nodeGetBoundingClientRect(
+            res[0],
+            innerLocation.characterIndex - res[1]
+          )
         );
       } catch {
         return 0;
@@ -336,11 +351,14 @@ class Page {
         this._allElements.findIndex((elem) => elem == firstElement)
       );
     } else {
+      const nodeIndex = this.originalNodesData.findIndex((ogData) =>
+        ogData.parts.some((part) => part.node === firstVisibleText[0])
+      );
+
       this.consistentInnerLocation = new InnerTextNode(
-        this._allTextNodes.findIndex(
-          (textNode) => textNode == firstVisibleText[0]
-        ),
-        firstVisibleText[1]
+        nodeIndex,
+        firstVisibleText[1] +
+          this.originalNodesData[nodeIndex].getOffsetOfNode(firstVisibleText[0])
       );
     }
 

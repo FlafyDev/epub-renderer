@@ -4,10 +4,10 @@ interface InnerLocation {
 }
 
 export class InnerPage implements InnerLocation {
-  identifier: number;
+  identifier: string;
   type = "page";
   constructor(public innerPage: number) {
-    this.identifier = innerPage;
+    this.identifier = this.type + innerPage;
   }
 }
 
@@ -15,7 +15,15 @@ export class InnerAnchor implements InnerLocation {
   identifier: string;
   type = "anchor";
   constructor(public anchor: string) {
-    this.identifier = anchor;
+    this.identifier = this.type + anchor;
+  }
+}
+
+export class InnerNode implements InnerLocation {
+  identifier: string;
+  type = "node";
+  constructor(public nodeIndex: number, public characterIndex: number) {
+    this.identifier = `${this.type}${nodeIndex}-${characterIndex}`;
   }
 }
 
@@ -23,15 +31,15 @@ export class InnerTextNode implements InnerLocation {
   identifier: string;
   type = "textNode";
   constructor(public textNodeIndex: number, public characterIndex: number) {
-    this.identifier = `${textNodeIndex}-${characterIndex}`;
+    this.identifier = `${this.type}${textNodeIndex}-${characterIndex}`;
   }
 }
 
 export class InnerElement implements InnerLocation {
   type = "element";
-  identifier: number;
+  identifier: string;
   constructor(public elementIndex: number) {
-    this.identifier = elementIndex;
+    this.identifier = this.type + elementIndex;
   }
 }
 

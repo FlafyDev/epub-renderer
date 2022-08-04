@@ -3,6 +3,7 @@ import InnerLocation, {
   InnerAnchor,
   InnerElement,
   InnerPage,
+  InnerNode,
   InnerTextNode,
 } from "./models/innerLocation";
 import NoteData, { NoteRangeData } from "./models/noteData";
@@ -68,6 +69,29 @@ export const onPageElement = (
     callback(
       pageFilePath,
       new InnerElement(elementIndex),
+      forced,
+      notesData ?? []
+    );
+};
+
+export const onPageNode = (
+  callback: (
+    pageFilePath: string,
+    innerNode: InnerNode,
+    forced: boolean,
+    notesData: NoteData[]
+  ) => void
+) => {
+  (window as any).pageNode = (
+    pageFilePath: string,
+    nodeIndex: number,
+    characterIndex: number,
+    forced: boolean = false,
+    notesData?: NoteData[]
+  ) =>
+    callback(
+      pageFilePath,
+      new InnerNode(nodeIndex, characterIndex),
       forced,
       notesData ?? []
     );

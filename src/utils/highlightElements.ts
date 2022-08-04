@@ -58,7 +58,7 @@ const highlightElements = (
     const children = Array.from(startContainer.parentNode!.childNodes);
     const spanIndex = children.indexOf(span);
 
-    let newOgNodeData: OriginalNodeData = new OriginalNodeData([]);
+    let newOgNodeData: OriginalNodeData = new OriginalNodeData([], 0);
 
     if (spanIndex != 0) {
       const prevSpan = children[spanIndex - 1];

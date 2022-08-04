@@ -2,6 +2,7 @@ import InnerLocation, {
   InnerAnchor,
   InnerElement,
   InnerPage,
+  InnerNode,
   InnerTextNode,
 } from "../models/innerLocation";
 import NoteData, { findNodeByOriginalNodeData } from "../models/noteData";
@@ -10,6 +11,7 @@ import clamp from "../utils/clamp";
 import findFirstVisibleElement from "../utils/findFirstVisibleElement";
 import findFirstVisibleText from "../utils/findFirstVisibleText";
 import getAllNodes from "../utils/getAllNodes";
+// import getAllTextNodes from "../utils/getAllTextNodes";
 import highlightElements from "../utils/highlightElements";
 import nodeGetBoundingClientRect from "../utils/nodeGetBoundingClientRect";
 
@@ -32,7 +34,10 @@ export interface StyleProperties {
 const notesColorToName = ["yellow", "green", "blue", "red"];
 
 export class OriginalNodeData {
-  constructor(public parts: { node: Node; preLength: number }[]) {}
+  constructor(
+    public parts: { node: Node; preLength: number }[],
+    public type: number
+  ) {}
 
   getOffsetOfNode(node: Node): number {
     const partIndex = this.parts.findIndex((part) => part.node == node);
@@ -75,17 +80,20 @@ class Page {
     this.renderHTML(initialHtml);
     this._allAnchors = Array.from(this._element.querySelectorAll("[id]"));
     this._allElements = Array.from(this._element.querySelectorAll("*"));
-    // this._allTextNodes = getAllTextNodes(this._element).slice(1);
+    // const allTextNodes = getAllTextNodes(this._element).slice(1);
     this._originalNodesData = getAllNodes(this._element)
       .slice(1)
       .map(
         (node) =>
-          new OriginalNodeData([
-            {
-              node,
-              preLength: 0,
-            },
-          ])
+          new OriginalNodeData(
+            [
+              {
+                node,
+                preLength: 0,
+              },
+            ],
+            node.nodeType
+          )
       );
 
     notes.forEach((note) => {
@@ -141,10 +149,9 @@ class Page {
   private _innerPage: number = 0;
   private _allAnchors;
   private _allElements;
-  // private _allTextNodes;
   private _originalNodesData: OriginalNodeData[];
   private _noteElements: Map<string, Element[]>;
-  public consistentInnerLocation: InnerElement | InnerTextNode | null = null;
+  public consistentInnerLocation: InnerElement | InnerNode | null = null;
 
   get style() {
     return this._style;
@@ -244,10 +251,36 @@ class Page {
       } catch {
         return 0;
       }
-    } else if (innerLocation instanceof InnerTextNode) {
+    } else if (innerLocation instanceof InnerNode) {
       try {
         const res = findNodeByOriginalNodeData(
-          this.originalNodesData[innerLocation.textNodeIndex],
+          this.originalNodesData[innerLocation.nodeIndex],
+          innerLocation.characterIndex
+        );
+
+        return this._getInnerPageOfBoundingRect(
+          nodeGetBoundingClientRect(
+            res[0],
+            innerLocation.characterIndex - res[1]
+          )
+        );
+      } catch {
+        return 0;
+      }
+    } else if (innerLocation instanceof InnerTextNode) {
+      try {
+        let textNodeIndex = 0;
+
+        const res = findNodeByOriginalNodeData(
+          this.originalNodesData.find((ogNodeData) => {
+            if (ogNodeData.type == 3) {
+              if (textNodeIndex == innerLocation.textNodeIndex) {
+                return true;
+              }
+              textNodeIndex++;
+            }
+            return false;
+          }) ?? this.originalNodesData[this.originalNodesData.length - 1],
           innerLocation.characterIndex
         );
 
@@ -355,7 +388,7 @@ class Page {
         ogData.parts.some((part) => part.node === firstVisibleText[0])
       );
 
-      this.consistentInnerLocation = new InnerTextNode(
+      this.consistentInnerLocation = new InnerNode(
         nodeIndex,
         firstVisibleText[1] +
           this.originalNodesData[nodeIndex].getOffsetOfNode(firstVisibleText[0])

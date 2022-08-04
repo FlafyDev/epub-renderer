@@ -8,6 +8,7 @@ import {
   onPage,
   onPageAnchor,
   onPageElement,
+  onPageNode,
   onPageTextNode,
   onClearSelection,
   onStyle,
@@ -58,6 +59,7 @@ class PageManager {
     onPage(this.onPage.bind(this));
     onPageAnchor(this.onPage.bind(this));
     onPageElement(this.onPage.bind(this));
+    onPageNode(this.onPage.bind(this));
     onPageTextNode(this.onPage.bind(this));
     onStyle(this.onStyle.bind(this));
     onCSS(this.onCSS.bind(this));
@@ -197,6 +199,7 @@ class PageManager {
     }
     this.makingPage = true;
 
+    // TODO check both innerLocation type and identifier
     if (
       forced ||
       innerLocation.identifier != this.pageInnerLocation?.identifier ||
@@ -228,6 +231,12 @@ class PageManager {
       this.page.innerPage =
         this.page.getInnerPageFromInnerLocation(innerLocation);
       this.page.applyStyleShowInnerPage();
+      // console.log(
+      //   "originalNodesData",
+      //   this.page.originalNodesData
+      //     .filter((n) => n.type === 3)
+      //     .map((n) => n.parts[0].node)
+      // );
     }
 
     this.makingPage = false;

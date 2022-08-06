@@ -27,6 +27,11 @@ a:visited {
 }
 
 @font-face {
+  font-family: "Merriweather";
+  src: url("/_fonts/variable/Merriweather.ttf");
+}
+
+@font-face {
   font-family: "Literata";
   src: url("/_fonts/variable/Literata.ttf");
 }

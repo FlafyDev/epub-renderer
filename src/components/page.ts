@@ -23,12 +23,12 @@ export interface StyleProperties {
   };
   fontSizeMultiplier: number;
   lineHeightMultiplier: number;
+  letterSpacingAdder: number;
+  wordSpacingAdder: number;
+  weightMultiplier: number;
   align: "left" | "center" | "right" | "justify";
   fontFamily: string;
   fontPath: string;
-  fontWeight: string;
-  letterSpacingMultiplier: number;
-  wordSpacingMultiplier: number;
 }
 
 const notesColorToName = ["yellow", "green", "blue", "red"];
@@ -191,8 +191,11 @@ class Page {
       lineHeight: string;
       letterSpacing: string;
       wordSpacing: string;
+      fontWeight: number;
       textAlign: string;
       textIndent: string;
+      fontFamily: string;
+      marginInLineStart: string;
     };
   }[] = [];
 
@@ -206,8 +209,11 @@ class Page {
           lineHeight: styles.lineHeight,
           letterSpacing: styles.letterSpacing,
           wordSpacing: styles.wordSpacing,
+          fontWeight: Number(styles.fontWeight),
           textAlign: styles.textAlign,
           textIndent: styles.textIndent,
+          fontFamily: styles.fontFamily,
+          marginInLineStart: styles.marginInlineStart,
         },
       });
     });
@@ -326,29 +332,37 @@ class Page {
 
       props.element.style.letterSpacing = `calc(${
         props.originalStyles.letterSpacing === "normal"
-          ? "0"
+          ? "0px"
           : props.originalStyles.letterSpacing
-      } * ${this.style.letterSpacingMultiplier})`;
+      } + ${this.style.letterSpacingAdder}px)`;
 
       props.element.style.wordSpacing = `calc(${
         props.originalStyles.wordSpacing === "normal"
           ? "2px"
           : props.originalStyles.wordSpacing
-      } * ${this.style.wordSpacingMultiplier})`;
+      } + ${this.style.wordSpacingAdder}px)`;
 
-      props.element.style.fontWeight = this.style.fontWeight;
+      props.element.style.fontWeight = (
+        props.originalStyles.fontWeight * this.style.weightMultiplier
+      ).toString();
 
-      if (props.originalStyles.textAlign === "center") {
+      if (this.style.align === "center") {
         props.element.style.textIndent = "0px";
+        props.element.style.marginInlineStart = "0px";
       } else {
         props.element.style.textIndent = props.originalStyles.textIndent;
+        props.element.style.marginInlineStart =
+          props.originalStyles.marginInLineStart;
+      }
+
+      if (props.originalStyles.textAlign !== "center") {
         props.element.style.textAlign = this.style.align;
       }
 
       if (this.style.fontFamily.length > 0) {
         props.element.style.fontFamily = this.style.fontFamily;
       } else {
-        props.element.style.fontFamily = "";
+        props.element.style.fontFamily = props.originalStyles.fontFamily;
       }
 
       // if (props.element.tagName === "IMG") {

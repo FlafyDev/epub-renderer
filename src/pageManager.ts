@@ -42,12 +42,12 @@ class PageManager {
     },
     fontSizeMultiplier: 1.125,
     lineHeightMultiplier: 1.2,
-    letterSpacingMultiplier: 1,
-    wordSpacingMultiplier: 1,
+    weightMultiplier: 1,
+    letterSpacingAdder: 0,
+    wordSpacingAdder: 0,
     align: "left",
     fontFamily: "Arial",
     fontPath: "",
-    fontWeight: "400",
   };
 
   constructor(public parent: HTMLElement) {

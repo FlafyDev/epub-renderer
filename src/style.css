@@ -4,6 +4,7 @@ body {
   padding: 0 !important;
   overflow: hidden;
   background-color: white;
+  font-variation-settings: "opsz" 32;
 }
 
 html.dark {
@@ -28,17 +29,17 @@ a:visited {
 
 @font-face {
   font-family: "Merriweather";
-  src: url("/_fonts/variable/Merriweather.ttf");
+  src: url("/_fonts/variable/Merriweather.ttf") format("truetype-variations");
 }
 
 @font-face {
   font-family: "Literata";
-  src: url("/_fonts/variable/Literata.ttf");
+  src: url("/_fonts/variable/Literata.ttf") format("truetype-variations");
 }
 
 @font-face {
   font-family: "RobotoMono";
-  src: url("/_fonts/variable/RobotoMono.ttf");
+  src: url("/_fonts/variable/RobotoMono.ttf") format("truetype-variations");
 }
 
 .__highlight-bold {

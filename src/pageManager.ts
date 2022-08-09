@@ -75,7 +75,7 @@ class PageManager {
     console.log("waiting for links to load");
     await Promise.all(
       Array.from(page.container.querySelectorAll("link"))
-        .filter((link) => !link.getAttribute("type")?.includes("adobe"))
+        .filter((link) => link.getAttribute("type") == "text/css")
         .map(
           (link) =>
             new Promise((resolve) => {

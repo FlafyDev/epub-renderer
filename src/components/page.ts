@@ -359,7 +359,10 @@ class Page {
         props.element.style.textAlign = this.style.align;
       }
 
-      if (this.style.fontFamily.length > 0) {
+      if (
+        this.style.fontFamily.length > 0 &&
+        this.style.fontFamily != "Default"
+      ) {
         props.element.style.fontFamily = this.style.fontFamily;
       } else {
         props.element.style.fontFamily = props.originalStyles.fontFamily;

@@ -1,6 +1,6 @@
 # Epub Renderer
 
-An EPUB Renderer for my [Book Reader](https://github.com/FlafyDev/epub-reader).
+An EPUB Renderer for my [Book Reader](https://github.com/FlafyDev/epub_reader).
 
 ## Usage
 

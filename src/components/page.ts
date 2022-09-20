@@ -368,6 +368,13 @@ class Page {
         props.element.style.fontFamily = props.originalStyles.fontFamily;
       }
 
+      ["Before", "Inside", "After"].forEach((type) => {
+        const style: { [key: string]: any } = props.element.style;
+        if (style[`break${type}`] || style[`pageBreak${type}`]) {
+          style[`break${type}`] = "column";
+        }
+      });
+
       // if (props.element.tagName === "IMG") {
       //   props.element.style.maxWidth = `calc(100vw - ${
       //     this.style.margin.side * 2

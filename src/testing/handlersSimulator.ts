@@ -1,4 +1,4 @@
-import NoteData, { NoteRangeData } from "../models/noteData";
+import { NoteRangeData } from "../models/noteData";
 
 const handlers = new Map<String, (...args: any[]) => void>();
 
@@ -26,13 +26,13 @@ const createHandler = (name: string, body: (...args: any[]) => void) => {
 
 const createHandlers = () => {
   createHandler("load", () => {
-    (window as any).page("xhtml/epub30-titlepage.xhtml", 0, null, [
-      new NoteData("Adas3", [new NoteRangeData(23, 23, 23, 46)], 2, true),
-      new NoteData("Adas1", [new NoteRangeData(23, 14, 23, 17)], 0, true),
-      new NoteData("Adas5", [new NoteRangeData(23, 190, 28, 55)], 3, true),
-      new NoteData("Adas4", [new NoteRangeData(23, 46, 23, 100)], 3, true),
-      new NoteData("Adas2", [new NoteRangeData(23, 17, 23, 23)], 1, true),
-      new NoteData("Adas6", [new NoteRangeData(23, 157, 23, 163)], 1, true),
+    (window as any).page("Text/section-0008.html", 2, false, [
+      // new NoteData("Adas3", [new NoteRangeData(23, 23, 23, 46)], 2, true),
+      // new NoteData("Adas1", [new NoteRangeData(23, 14, 23, 17)], 0, true),
+      // new NoteData("Adas5", [new NoteRangeData(23, 190, 28, 55)], 3, true),
+      // new NoteData("Adas4", [new NoteRangeData(23, 46, 23, 100)], 3, true),
+      // new NoteData("Adas2", [new NoteRangeData(23, 17, 23, 23)], 1, true),
+      // new NoteData("Adas6", [new NoteRangeData(28, 52, 28, 55)], 1, true),
     ]);
   });
 

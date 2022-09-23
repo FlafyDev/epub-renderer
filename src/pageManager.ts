@@ -1,5 +1,5 @@
 import urlJoin from "url-join";
-import Page, { StyleProperties } from "./components/page";
+import Page, { StyleProperties, StyleThemes } from "./components/page";
 import {
   notifyLoad,
   notifyReady,
@@ -48,6 +48,7 @@ class PageManager {
     align: "left",
     fontFamily: "Arial",
     fontPath: "",
+    theme: StyleThemes.dark,
   };
 
   constructor(public parent: HTMLElement) {
@@ -254,6 +255,16 @@ class PageManager {
 
   onStyle(style: StyleProperties) {
     this.style = style;
+    let theme: string;
+    switch (style.theme) {
+      case StyleThemes.light:
+        theme = "light";
+        break;
+      case StyleThemes.dark:
+        theme = "dark";
+        break;
+    }
+    document.getElementsByTagName("html")[0].className = theme;
     this.page?.unsafelySetStyle(style);
   }
 

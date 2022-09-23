@@ -15,6 +15,11 @@ import getAllNodes from "../utils/getAllNodes";
 import highlightElements from "../utils/highlightElements";
 import nodeGetBoundingClientRect from "../utils/nodeGetBoundingClientRect";
 
+export enum StyleThemes {
+  light,
+  dark,
+}
+
 export interface StyleProperties {
   margin: {
     side: number;
@@ -29,6 +34,7 @@ export interface StyleProperties {
   align: "left" | "center" | "right" | "justify";
   fontFamily: string;
   fontPath: string;
+  theme: StyleThemes;
 }
 
 const notesColorToName = ["yellow", "green", "blue", "red"];
